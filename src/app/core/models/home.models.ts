@@ -1,0 +1,39 @@
+export interface HomeCategoryCard {
+  label: string;
+  categorySlug: string;
+  description: string;
+  imageUrl: string;
+  icon?: string;
+}
+
+export interface HomeOfferCard {
+  id: number;
+  name: string;
+  shortDescription: string;
+  imageUrl: string;
+  discountPercent: number;
+  discountedPrice: number;
+  basePrice: number;
+  savings: number;
+}
+
+export interface HeroSlide {
+  id: number;
+  title: string;
+  shortDescription: string;
+  imageUrl: string;
+  discountPercent: number;
+  discountedPrice: number;
+  basePrice: number;
+  savings: number;
+}
+
+export interface SpotlightSlide {
+  id: string;
+  kicker: string;
+  title: string;
+  description: string;
+  ctaLabel: string;
+  ctaLink: string;
+  imageUrl: string;
+}

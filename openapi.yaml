@@ -1,0 +1,337 @@
+openapi: 3.0.3
+info:
+  title: BLU Service Shop - Mock API
+  version: 1.0.0
+  description: |
+    Mock HTTP API used by the frontend during development. Products detail responses
+    embed related products to minimize client calls. The `quote-request` endpoint
+    is documented but intentionally not implemented in the mock server (frontend
+    currently uses a mailto: flow).
+servers:
+  - url: /api
+paths:
+  /products:
+    get:
+      summary: Lista prodotti
+      description: Restituisce una pagina di prodotti, supporta filtri e ordinamento.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          description: Numero pagina (default 1)
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Elementi per pagina
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Slug categoria
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Termini di ricerca
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: ["name.asc", "name.desc", "price.asc", "price.desc"]
+          description: Ordinamento
+      responses:
+        "200":
+          description: Lista prodotti
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductsListResponse"
+        "500":
+          description: Errore server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /products/{id}:
+    get:
+      summary: Dettaglio prodotto (includere "related" nel payload)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dettaglio prodotto con correlati
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "404":
+          description: Prodotto non trovato
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: Errore server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /home/offers:
+    get:
+      summary: Offerte per la home
+      description: Restituisce prodotti con `isOffer=true` per il carosello della home.
+      responses:
+        "200":
+          description: Offerte
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OffersResponse"
+        "500":
+          description: Errore server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /categories:
+    get:
+      summary: Elenco categorie
+      responses:
+        "200":
+          description: Categorie disponibili
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoriesResponse"
+
+  /quote-request:
+    post:
+      summary: Invia richiesta preventivo (documentata ma non implementata nel mock)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteRequestDTO"
+      responses:
+        "201":
+          description: Richiesta accettata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteResponse"
+        "501":
+          description: Non implementata nel mock
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        details:
+          type: object
+      required: [status, message]
+
+    ProductOption:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        priceDelta:
+          type: number
+      required: [id, name]
+
+    ProductOptionGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        multiSelect:
+          type: boolean
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOption"
+      required: [id, label, options]
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        shortDescription:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categorySlug:
+          type: string
+        subcategory:
+          type: string
+        subcategorySlug:
+          type: string
+        basePrice:
+          type: number
+        imageUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        isOffer:
+          type: boolean
+        discountPercent:
+          type: number
+        relatedProductCodes:
+          type: array
+          items:
+            type: string
+        optionGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOptionGroup"
+      required: [id, name, basePrice, optionGroups]
+
+    ProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          properties:
+            related:
+              type: array
+              items:
+                $ref: "#/components/schemas/Product"
+
+    ProductsListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+      required: [items, total, page, pageSize]
+
+    OffersResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+      required: [items]
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+      required: [id, name]
+
+    CategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+      required: [categories]
+
+    QuoteRequestDTO:
+      type: object
+      properties:
+        productId:
+          type: integer
+        selectedOptions:
+          type: object
+          additionalProperties:
+            type: string
+        quantity:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        notes:
+          type: string
+      required: [productId, selectedOptions, quantity]
+
+    QuoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        quoteId:
+          type: string
+        message:
+          type: string
+      required: [success]
+
+    PriceCalcRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+        selectedOptions:
+          type: object
+          additionalProperties:
+            type: string
+        quantity:
+          type: integer
+      required: [productId, selectedOptions, quantity]
+
+    PriceCalcResponse:
+      type: object
+      properties:
+        estimatedTotal:
+          type: number
+        breakdown:
+          type: object
+          properties:
+            basePrice:
+              type: number
+            optionsTotal:
+              type: number
+            discount:
+              type: number
+      required: [estimatedTotal, breakdown]

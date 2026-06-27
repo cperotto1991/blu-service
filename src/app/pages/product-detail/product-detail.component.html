@@ -1,0 +1,114 @@
+@if (product(); as product) {
+  <section class="detail">
+    <div class="detail__image">
+      <img [src]="product.imageUrl" [alt]="product.name" />
+    </div>
+
+    <div class="detail__content">
+      <a
+        [routerLink]="['/catalogo']"
+        [queryParams]="{ category: product.categorySlug }"
+        class="back-link"
+      >
+        ← Torna a {{ product.category }}
+      </a>
+      <span class="category">{{ product.category }}</span>
+      <h1>{{ product.name }}</h1>
+      <p>{{ product.description }}</p>
+
+      <div class="tags">
+        @for (tag of product.tags; track tag) {
+          <span>{{ tag }}</span>
+        }
+      </div>
+
+      <div class="price-box">
+        <span>Prezzo base</span>
+        <strong>{{
+          product.basePrice | currency: "EUR" : "symbol" : "1.0-0"
+        }}</strong>
+        <small>Il prezzo finale dipende dalla configurazione scelta.</small>
+      </div>
+
+      <button
+        type="button"
+        class="configure-btn"
+        [class.selected]="isSelected(product.id)"
+        (click)="toggleConfiguration(product)"
+      >
+        @if (isSelected(product.id)) {
+          ✓ Aggiunto alla configurazione
+        } @else {
+          + Aggiungi alla configurazione
+        }
+      </button>
+
+      @if (relatedProductGroups().length > 0) {
+        <section class="combo-box">
+          <div class="combo-box__head">
+            <span>Optional consigliati</span>
+            <h2>Completa la configurazione</h2>
+            <p>
+              Seleziona accessori, ricambi o kit compatibili da aggiungere al
+              preventivo.
+            </p>
+          </div>
+
+          <div class="combo-groups">
+            @for (group of relatedProductGroups(); track group.category) {
+              <div class="combo-group">
+                <h3>{{ group.category }}</h3>
+
+                <div class="combo-list">
+                  @for (related of group.products; track related.code) {
+                    <article
+                      class="combo-item"
+                      [class.selected]="isSelected(related.id)"
+                    >
+                      <a
+                        class="combo-item__image"
+                        [routerLink]="['/catalogo', related.id]"
+                      >
+                        <img [src]="related.imageUrl" [alt]="related.name" />
+                      </a>
+
+                      <div class="combo-item__content">
+                        <strong>{{ related.name }}</strong>
+                        <small>Codice: {{ related.code }}</small>
+
+                        <span>
+                          {{
+                            related.basePrice
+                              | currency: "EUR" : "symbol" : "1.0-0"
+                          }}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="combo-btn"
+                        [class.selected]="isSelected(related.id)"
+                        (click)="toggleConfiguration(related)"
+                      >
+                        @if (isSelected(related.id)) {
+                          ✓ Aggiunto
+                        } @else {
+                          + Aggiungi
+                        }
+                      </button>
+                    </article>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="not-found">
+    <h1>Prodotto non trovato</h1>
+    <a routerLink="/catalogo?">Torna al catalogo</a>
+  </section>
+}

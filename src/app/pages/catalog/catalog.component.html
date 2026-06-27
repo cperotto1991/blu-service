@@ -1,0 +1,127 @@
+<section class="catalog-layout">
+  <aside class="filters">
+    @if (currentCategory()) {
+      <div class="filters-head">
+        <span class="filters-kicker">Catalogo</span>
+        <h3>{{ currentCategory()?.label }}</h3>
+      </div>
+
+      <div class="category-groups">
+        @for (group of currentCategoryGroups(); track group.id) {
+          <div class="filter-section">
+            <button
+              type="button"
+              class="group-title"
+              [class.active]="
+                selectedGroup() === group.id && !selectedSubFilter()
+              "
+              (click)="selectGroupOnly(group.id)"
+            >
+              {{ group.title }}
+            </button>
+
+            <div class="subfilters-list">
+              @for (filter of group.links; track filter.url) {
+                <button
+                  type="button"
+                  class="filter"
+                  [class.active]="selectedSubFilter() === filter.url"
+                  (click)="selectSubFilter(filter.url, group.id)"
+                >
+                  {{ filter.label }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="filters-head">
+        <span class="filters-kicker">Catalogo</span>
+        <h3>Filtra catalogo</h3>
+      </div>
+
+      <div class="filter-section">
+        <h4 class="filter-section-title">Categorie</h4>
+
+        @for (category of categories(); track category) {
+          <button
+            type="button"
+            class="filter"
+            [class.active]="selectedCategory() === category"
+            (click)="selectCategory(category)"
+          >
+            {{ category }}
+          </button>
+        }
+      </div>
+    }
+  </aside>
+
+  <div class="catalog-main">
+    <div class="catalog-configurator">
+      <div class="configurator-head">
+        <div>
+          <span>Configuratore</span>
+          <h2>La tua selezione</h2>
+        </div>
+
+        <strong>{{ selectedProducts().length }} articoli</strong>
+      </div>
+
+      @if (selectedProducts().length > 0) {
+        <div class="configurator-items">
+          @for (item of selectedProducts(); track item.id) {
+            <div class="configurator-item">
+              <img [src]="item.imageUrl" [alt]="item.name" />
+
+              <div class="configurator-item__info">
+                <strong>{{ item.name }}</strong>
+                <span>
+                  {{ item.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                class="remove-item"
+                aria-label="Rimuovi prodotto"
+                (click)="removeProduct(item.id)"
+              >
+                ×
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="configurator-total">
+          <div>
+            <span>Totale configurazione</span>
+            <strong>
+              {{ selectedTotal() | currency: "EUR" : "symbol" : "1.0-0" }}
+            </strong>
+          </div>
+
+          <a routerLink="/richiesta-preventivo" class="view-configuration-btn">
+            Vedi configurazione
+          </a>
+        </div>
+      } @else {
+        <p class="configurator-empty">
+          Aggiungi prodotti dal catalogo per comporre la tua configurazione.
+        </p>
+      }
+    </div>
+
+    <div class="catalog-grid">
+      @for (product of products(); track product.id) {
+        <app-product-card [product]="product" (add)="addProduct(product)" />
+      } @empty {
+        <div class="empty-state">
+          <h3>Nessun prodotto trovato</h3>
+          <p>Prova a rimuovere il filtro selezionato.</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>

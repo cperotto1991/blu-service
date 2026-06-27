@@ -1,0 +1,32 @@
+<article class="product-card">
+  <a class="product-card__image" [routerLink]="['/catalogo', product.id]">
+    <img [src]="product.imageUrl" [alt]="product.name" />
+
+    @if (product.offerLabel) {
+      <span class="product-card__badge">{{ product.offerLabel }}</span>
+    }
+  </a>
+
+  <div class="product-card__body">
+    <span class="product-card__category">{{ product.category }}</span>
+
+    <h3>{{ product.name }}</h3>
+    <p>{{ product.shortDescription }}</p>
+
+    <div class="product-card__footer">
+      <span class="product-card__price">
+        Da {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+      </span>
+
+      <div class="product-card__actions">
+        <button type="button" class="btn-add" (click)="addToConfigurator()">
+          Aggiungi
+        </button>
+
+        <a class="btn-detail" [routerLink]="['/catalogo', product.id]">
+          Dettaglio
+        </a>
+      </div>
+    </div>
+  </div>
+</article>

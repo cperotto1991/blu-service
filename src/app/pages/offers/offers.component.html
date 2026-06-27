@@ -1,0 +1,34 @@
+<section class="offers-hero">
+  <span>Offerte attive</span>
+  <h1>Prodotti selezionati con condizioni speciali</h1>
+  <p>
+    Promozioni, sconti e configurazioni vantaggiose disponibili per un periodo
+    limitato.
+  </p>
+</section>
+
+<section class="offers-grid">
+  @for (product of offers(); track product.id) {
+    <article class="offer-card">
+      <img [src]="product.imageUrl" [alt]="product.name" />
+
+      <div class="offer-card__content">
+        <span class="badge">{{ product.offerLabel }}</span>
+        <h2>{{ product.name }}</h2>
+        <p>{{ product.shortDescription }}</p>
+
+        <div class="price">
+          <span>Da</span>
+          <strong>{{
+            product.basePrice | currency: "EUR" : "symbol" : "1.0-0"
+          }}</strong>
+          @if (product.discountPercent) {
+            <em>-{{ product.discountPercent }}%</em>
+          }
+        </div>
+
+        <a [routerLink]="['/configura', product.id]">Configura offerta</a>
+      </div>
+    </article>
+  }
+</section>

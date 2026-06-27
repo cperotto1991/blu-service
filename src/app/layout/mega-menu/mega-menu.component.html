@@ -1,0 +1,53 @@
+<nav class="mega-menu" (mouseleave)="closeMenu()">
+  <div class="mega-menu__bar">
+    @for (category of categories; track category.slug) {
+      <button
+        type="button"
+        class="mega-menu__trigger"
+        [class.active]="activeCategory()?.slug === category.slug"
+        (mouseenter)="openCategory(category)"
+      >
+        <span class="mega-menu__icon">{{ category.icon }}</span>
+        <span>{{ category.label }}</span>
+        <span class="mega-menu__chevron">⌄</span>
+      </button>
+    }
+
+    <a routerLink="/offerte" class="mega-menu__trigger mega-menu__link">
+      Occasioni
+    </a>
+
+    <a routerLink="/professionisti" class="mega-menu__pro">
+      Sei un Professionista?
+    </a>
+  </div>
+
+  @if (activeCategory(); as category) {
+    <section class="mega-panel">
+      <div class="mega-panel__inner">
+        <div class="group-grid">
+          @for (group of category.groups; track group.title) {
+            <a
+              [routerLink]="['/catalogo']"
+              [queryParams]="{
+                category: category.slug,
+                group: getGroupId(group),
+              }"
+              class="group-card"
+            >
+              <div class="group-card__content">
+                <h3>{{ group.title }}</h3>
+                @if (group.description) {
+                  <p>{{ group.description }}</p>
+                } @else {
+                  <p>Esplora prodotti configurabili per questa categoria.</p>
+                }
+              </div>
+              <span class="group-card__arrow">›</span>
+            </a>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</nav>

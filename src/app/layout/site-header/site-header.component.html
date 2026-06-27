@@ -1,0 +1,116 @@
+<header class="site-header">
+  <div class="site-header__top">
+    <div class="top-links">
+      <a routerLink="/" class="header-logo" aria-label="BLU Service">
+        <img src="/assets/images/logopiccolo.png" alt="BLU Service" />
+      </a>
+      <a
+        href="https://www.bluservice.eu/"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Chi Siamo</a
+      >
+      <span aria-hidden="true">|</span>
+      <a
+        href="https://wa.me/393331234567?text=Ciao%2C%20ho%20bisogno%20di%20assistenza"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Assistenza
+      </a>
+      <span aria-hidden="true">|</span>
+      <a href="mailto:info@bluservice.eu?subject=Lavora%20Con%20Noi"
+        >Lavora Con Noi</a
+      >
+    </div>
+    <a
+      class="header-maps"
+      href="https://www.google.com/maps/search/?api=1&query=Via+Copernico+18%2C+00071+Pomezia+RM"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Apri indirizzo su Google Maps"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 2c-3.59 0-6.5 2.91-6.5 6.5 0 4.72 5.65 11.83 5.89 12.13.16.2.46.2.62 0 .24-.3 5.89-7.41 5.89-12.13C18.5 4.91 15.59 2 12 2zm0 8.9a2.4 2.4 0 1 1 0-4.8 2.4 2.4 0 0 1 0 4.8z"
+        />
+      </svg>
+      <span>Vieni a trovarci</span>
+    </a>
+    <form class="header-search" role="search" aria-label="Ricerca prodotti">
+      <input
+        type="search"
+        placeholder="Cerca prodotti..."
+        aria-label="Cerca prodotti"
+      />
+      <button type="submit" aria-label="Avvia ricerca">Cerca</button>
+    </form>
+
+    <button
+      type="button"
+      class="menu-toggle"
+      aria-label="Apri menu"
+      [attr.aria-expanded]="mobileMenuOpen()"
+      (click)="toggleMobileMenu()"
+    >
+      Menu
+    </button>
+  </div>
+
+  <div class="site-header__menu-row">
+    <nav class="desktop-nav" aria-label="Navigazione principale">
+      <a routerLink="/offerte" routerLinkActive="active">Offerte</a>
+      <a routerLink="/catalogo" [queryParams]="{ category: 'depuratori' }"
+        >Depuratori</a
+      >
+      <a routerLink="/catalogo" [queryParams]="{ category: 'addolcitori' }"
+        >Addolcitori</a
+      >
+      <a routerLink="/catalogo" [queryParams]="{ category: 'sanificazione' }"
+        >Sanificazione</a
+      >
+      <a routerLink="/catalogo" [queryParams]="{ category: 'miscelatori' }"
+        >Miscelatori</a
+      >
+      <a routerLink="/catalogo" [queryParams]="{ category: 'accessori' }"
+        >Accessori</a
+      >
+    </nav>
+  </div>
+
+  @if (mobileMenuOpen()) {
+    <nav class="mobile-nav" aria-label="Navigazione mobile">
+      <a (click)="closeMobileMenu()">Catalogo</a>
+      <a routerLink="/offerte" (click)="closeMobileMenu()">Offerte</a>
+      <a
+        routerLink="/catalogo"
+        [queryParams]="{ category: 'depuratori' }"
+        (click)="closeMobileMenu()"
+      >
+        Depuratori
+      </a>
+      <a
+        routerLink="/catalogo"
+        [queryParams]="{ category: 'addolcitori' }"
+        (click)="closeMobileMenu()"
+      >
+        Addolcitori
+      </a>
+      <a
+        routerLink="/catalogo"
+        [queryParams]="{ category: 'sanificazione' }"
+        (click)="closeMobileMenu()"
+      >
+        Sanificazione
+      </a>
+      <a
+        routerLink="/catalogo"
+        [queryParams]="{ category: 'accessori' }"
+        (click)="closeMobileMenu()"
+      >
+        Accessori
+      </a>
+      <a (click)="closeMobileMenu()">Assistenza</a>
+    </nav>
+  }
+</header>

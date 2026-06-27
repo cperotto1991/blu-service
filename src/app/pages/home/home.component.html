@@ -1,0 +1,182 @@
+<section class="home-showcase">
+  <section class="home-hero">
+    <div class="home-hero__content">
+      <div class="hero-brand">
+        <img src="/assets/images/logogrande.png" alt="BLU Service" />
+      </div>
+
+      <p class="hero-kicker">BLU SERVICE</p>
+      <h1>Acqua pura,<br />ogni giorno.</h1>
+      <p class="hero-copy">
+        Soluzioni avanzate per il trattamento dell'acqua pensate per la tua casa
+        e la tua attivita.
+      </p>
+    </div>
+    <div class="home-hero__visual">
+      <div
+        class="hero-carousel"
+        (mouseenter)="pauseHeroCarousel()"
+        (mouseleave)="resumeHeroCarousel()"
+      >
+        @for (slide of heroSlides(); track slide.id; let i = $index) {
+          <img
+            class="hero-carousel__slide"
+            [class.is-active]="i === activeHeroSlideIndex()"
+            [src]="slide.imageUrl"
+            [alt]="slide.title"
+          />
+        }
+
+        <div class="hero-carousel__caption">
+          <span class="hero-carousel__promo">{{ heroPromoText }}</span>
+          <strong>{{ activeHeroSlideData().title }}</strong>
+          <p>{{ activeHeroSlideData().shortDescription }}</p>
+          <div class="hero-carousel__price">
+            <strong
+              >{{
+                formatPrice(activeHeroSlideData().discountedPrice)
+              }}
+              EUR</strong
+            >
+            <span>{{ formatPrice(activeHeroSlideData().basePrice) }} EUR</span>
+          </div>
+          <div class="hero-carousel__actions">
+            <span class="hero-carousel__discount"
+              >-{{ activeHeroSlideData().discountPercent }}%</span
+            >
+            <span class="hero-carousel__saving"
+              >Risparmi
+              {{ formatPrice(activeHeroSlideData().savings) }} EUR</span
+            >
+            @if (activeHeroSlideData().id !== 0) {
+              <a
+                class="hero-carousel__buy"
+                [routerLink]="['/catalogo', activeHeroSlideData().id]"
+              >
+                Acquista ora
+              </a>
+            }
+          </div>
+        </div>
+
+        @if (heroSlides().length > 1) {
+          <button
+            type="button"
+            class="hero-carousel__control hero-carousel__control--prev"
+            (click)="previousHeroSlide()"
+            aria-label="Immagine precedente"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            class="hero-carousel__control hero-carousel__control--next"
+            (click)="nextHeroSlide()"
+            aria-label="Immagine successiva"
+          >
+            ›
+          </button>
+
+          <div class="hero-carousel__dots" aria-label="Indicatori carousel">
+            @for (slide of heroSlides(); track slide.id; let i = $index) {
+              <button
+                type="button"
+                [class.is-active]="i === activeHeroSlideIndex()"
+                (click)="setHeroSlide(i)"
+                [attr.aria-label]="'Vai alla slide ' + (i + 1)"
+              ></button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="home-offers">
+    <div class="offers-intro">
+      <p class="section-kicker">Offerte imperdibili</p>
+      <h2>Le migliori offerte,<br />i migliori vantaggi.</h2>
+      <p>Solo per un periodo limitato.</p>
+      <a routerLink="/offerte" class="cta-button">Scopri tutte le offerte</a>
+    </div>
+
+    <div class="offers-grid">
+      @for (offer of offers(); track offer.id) {
+        <a class="offer-card" [routerLink]="['/catalogo', offer.id]">
+          <span class="offer-card__discount"
+            >-{{ offer.discountPercent }}%</span
+          >
+          <div class="offer-card__image">
+            <img [src]="offer.imageUrl" [alt]="offer.name" />
+          </div>
+
+          <div class="offer-card__body">
+            <h3>{{ offer.name }}</h3>
+            <p>{{ offer.shortDescription }}</p>
+            <div class="offer-card__price">
+              <strong>{{ formatPrice(offer.discountedPrice) }} EUR</strong>
+              <span>{{ formatPrice(offer.basePrice) }} EUR</span>
+            </div>
+            <div class="offer-card__save">
+              Risparmi {{ formatPrice(offer.savings) }} EUR
+            </div>
+            <span class="offer-card__cta">Scopri l'offerta</span>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+</section>
+
+<section class="home-spotlight">
+  <div class="spotlight-carousel">
+    @for (item of spotlightSlides; track item.id; let i = $index) {
+      <article
+        class="spotlight-slide"
+        [class.is-active]="i === activeSpotlightSlideIndex()"
+      >
+        <img [src]="item.imageUrl" [alt]="item.title" />
+        <div class="spotlight-slide__overlay">
+          <span>{{ item.kicker }}</span>
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
+          <a class="spotlight-slide__cta" [routerLink]="item.ctaLink">{{
+            item.ctaLabel
+          }}</a>
+        </div>
+      </article>
+    }
+
+    @if (spotlightSlides.length > 1) {
+      <button
+        type="button"
+        class="spotlight-carousel__control spotlight-carousel__control--prev"
+        (click)="previousSpotlightSlide()"
+        aria-label="Slide precedente"
+      >
+        ‹
+      </button>
+      <button
+        type="button"
+        class="spotlight-carousel__control spotlight-carousel__control--next"
+        (click)="nextSpotlightSlide()"
+        aria-label="Slide successiva"
+      >
+        ›
+      </button>
+      <div class="spotlight-carousel__dots">
+        @for (item of spotlightSlides; track item.id; let i = $index) {
+          <button
+            type="button"
+            [class.is-active]="i === activeSpotlightSlideIndex()"
+            (click)="setSpotlightSlide(i)"
+          ></button>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<section class="home-values" id="supporto">
+  <img src="/assets/images/footer.png" alt="Supporto BLU Service Shop" />
+</section>

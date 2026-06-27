@@ -1,0 +1,104 @@
+@if (product(); as product) {
+  <section class="configurator">
+    <aside class="summary">
+      <img [src]="product.imageUrl" [alt]="product.name" />
+      <span>{{ product.category }}</span>
+      <h1>{{ product.name }}</h1>
+      <p>{{ product.shortDescription }}</p>
+
+      <div class="total-box">
+        <span>Totale stimato</span>
+        <strong>{{ total() | currency: "EUR" : "symbol" : "1.0-0" }}</strong>
+      </div>
+    </aside>
+
+    <section class="steps">
+      <div class="progress">
+        <span
+          >Step {{ step() + 1 }} di {{ product.optionGroups.length + 1 }}</span
+        >
+      </div>
+
+      @if (currentGroup(); as group) {
+        <h2>{{ group.title }}</h2>
+
+        <div class="options">
+          @for (option of group.options; track option.id) {
+            <button
+              type="button"
+              class="option"
+              [class.active]="selectedOptions()[group.id] === option.id"
+              (click)="selectOption(group.id, option.id)"
+            >
+              <strong>{{ option.label }}</strong>
+              <span>
+                @if (option.priceDelta > 0) {
+                  +{{
+                    option.priceDelta | currency: "EUR" : "symbol" : "1.0-0"
+                  }}
+                } @else {
+                  Incluso
+                }
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <h2>Richiedi preventivo</h2>
+
+        <div class="form-grid">
+          <label>
+            Nome e cognome
+            <input [(ngModel)]="customerName" type="text" />
+          </label>
+
+          <label>
+            Email
+            <input [(ngModel)]="customerEmail" type="email" />
+          </label>
+
+          <label>
+            Telefono
+            <input [(ngModel)]="customerPhone" type="tel" />
+          </label>
+
+          <label>
+            Quantità
+            <input
+              [ngModel]="quantity()"
+              (ngModelChange)="quantity.set(+$event)"
+              type="number"
+              min="1"
+            />
+          </label>
+
+          <label class="full">
+            Note
+            <textarea [(ngModel)]="notes" rows="5"></textarea>
+          </label>
+        </div>
+      }
+
+      <div class="actions">
+        <button
+          type="button"
+          class="ghost"
+          (click)="previous()"
+          [disabled]="step() === 0"
+        >
+          Indietro
+        </button>
+
+        @if (step() < product.optionGroups.length) {
+          <button type="button" class="primary" (click)="next()">
+            Continua
+          </button>
+        } @else {
+          <button type="button" class="primary" (click)="submit()">
+            Invia richiesta
+          </button>
+        }
+      </div>
+    </section>
+  </section>
+}

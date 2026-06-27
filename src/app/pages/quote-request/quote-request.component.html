@@ -1,0 +1,74 @@
+<section class="quote-page">
+  <div class="quote-header">
+    <span>Configurazione</span>
+    <h1>Riepilogo prodotti selezionati</h1>
+    <p>
+      Controlla i prodotti aggiunti e verifica il totale della configurazione.
+    </p>
+  </div>
+
+  @if (selectedProducts().length > 0) {
+    <div class="quote-layout">
+      <div class="quote-items">
+        @for (product of selectedProducts(); track product.id) {
+          <article class="quote-item">
+            <img [src]="product.imageUrl" [alt]="product.name" />
+
+            <div class="quote-item__content">
+              <span>{{ product.category }}</span>
+              <h3>{{ product.name }}</h3>
+              <p>{{ product.shortDescription }}</p>
+            </div>
+
+            <strong>
+              {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+            </strong>
+
+            <button
+              type="button"
+              class="remove-btn"
+              (click)="removeProduct(product.id)"
+            >
+              ×
+            </button>
+          </article>
+        }
+      </div>
+
+      <aside class="quote-summary">
+        <span>Totale stimato</span>
+
+        <strong>
+          {{ selectedTotal() | currency: "EUR" : "symbol" : "1.0-0" }}
+        </strong>
+
+        <p>
+          Il prezzo è indicativo. La configurazione definitiva verrà confermata
+          in negozio.
+        </p>
+
+        <a (click)="goBack()" class="secondary-btn"> Torna al catalogo </a>
+
+        <button type="button" class="clear-btn" (click)="clearConfiguration()">
+          Svuota configurazione
+        </button>
+
+        <button
+          type="button"
+          class="primary-btn"
+          (click)="requestQuote()"
+          aria-label="Richiedi preventivo per la configurazione attuale"
+        >
+          Richiedi preventivo
+        </button>
+      </aside>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <h2>Nessun prodotto selezionato</h2>
+      <p>Aggiungi prodotti dal catalogo per creare una configurazione.</p>
+
+      <a (click)="goBack()" class="primary-btn"> Vai al catalogo </a>
+    </div>
+  }
+</section>
