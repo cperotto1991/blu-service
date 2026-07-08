@@ -1,0 +1,488 @@
+<section class="admin-page">
+  <div class="admin-hero">
+    <p class="eyebrow">Firebase Admin</p>
+    <h1>Gestisci catalogo, immagini e accesso admin</h1>
+  </div>
+
+  <form
+    *ngIf="!isLoggedIn()"
+    class="auth-card"
+    [formGroup]="loginForm"
+    (ngSubmit)="signIn()"
+  >
+    <h2>Login admin</h2>
+
+    <label>
+      Email
+      <input type="email" formControlName="email" placeholder="admin@..." />
+    </label>
+
+    <label>
+      Password
+      <input
+        type="password"
+        formControlName="password"
+        placeholder="••••••••"
+      />
+    </label>
+
+    <button type="submit">Accedi</button>
+  </form>
+
+  <section *ngIf="isLoggedIn() && !isAuthReady()" class="auth-card">
+    <h2>Verifica permessi...</h2>
+    <p>Controllo del ruolo admin in corso su Firebase.</p>
+  </section>
+
+  <section
+    *ngIf="isLoggedIn() && isAuthReady() && !isAdmin()"
+    class="auth-card"
+  >
+    <h2>Accesso negato</h2>
+    <p>
+      Il tuo account è autenticato ma non è presente nella collection admins.
+    </p>
+    <button type="button" class="ghost" (click)="signOut()">Esci</button>
+  </section>
+
+  <ng-container *ngIf="isLoggedIn() && isAuthReady() && isAdmin()">
+    <div class="admin-toolbar">
+      <div>
+        <strong>{{ user()?.email }}</strong>
+        <p>Sessione admin attiva su Firebase Authentication.</p>
+      </div>
+
+      <div class="toolbar-actions">
+        <button type="button" (click)="startAddingProduct()">
+          Nuovo prodotto
+        </button>
+        <button
+          *ngIf="hasSelection() && !isEditorPage()"
+          type="button"
+          class="danger"
+          [disabled]="isDeleting()"
+          (click)="deleteSelectedProducts()"
+        >
+          Elimina selezionati ({{ selectedProductCodes().length }})
+        </button>
+        <button type="button" class="ghost" (click)="signOut()">Esci</button>
+      </div>
+    </div>
+
+    <form
+      *ngIf="isEditorPage() && showProductForm()"
+      class="admin-form"
+      [formGroup]="productForm"
+      (ngSubmit)="saveProduct()"
+    >
+      <div class="form-grid">
+        <label>
+          Code
+          <input
+            type="text"
+            formControlName="code"
+            placeholder="Codice prodotto"
+          />
+        </label>
+
+        <label>
+          Nome
+          <input type="text" formControlName="name" />
+        </label>
+
+        <label>
+          Categoria menu
+          <select
+            formControlName="categorySlug"
+            (change)="onCategorySelectionChange($any($event.target).value)"
+          >
+            @for (category of categoryOptions; track category.slug) {
+              <option [value]="category.slug">{{ category.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Sottocategoria menu
+          <select
+            formControlName="subcategorySlug"
+            (change)="onSubcategorySelectionChange($any($event.target).value)"
+          >
+            @for (
+              subcategory of getCurrentSubcategoryOptions();
+              track subcategory.slug
+            ) {
+              <option [value]="subcategory.slug">
+                {{ subcategory.label }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="offer-toggle">
+          <span class="offer-toggle__label">Prodotto in offerta</span>
+          <span class="offer-toggle__control">
+            <span class="offer-toggle__switch">
+              <input
+                type="checkbox"
+                formControlName="isOffer"
+                (change)="onOfferToggle($any($event.target).checked)"
+              />
+              <span class="offer-toggle__slider"></span>
+            </span>
+          </span>
+        </label>
+
+        <label>
+          Prezzo base
+          <input
+            type="number"
+            step="0.01"
+            formControlName="basePrice"
+            (input)="onBasePriceInput()"
+          />
+        </label>
+
+        <label *ngIf="productForm.value.isOffer">
+          Prezzo finale
+          <input
+            type="number"
+            step="0.01"
+            formControlName="finalPrice"
+            (input)="onFinalPriceInput()"
+          />
+        </label>
+
+        <label *ngIf="productForm.value.isOffer">
+          Sconto %
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            formControlName="discountPercent"
+            (input)="onDiscountPercentInput()"
+          />
+        </label>
+
+        <label *ngIf="productForm.value.isOffer">
+          Tipo offerta
+          <select formControlName="offerType">
+            <option value="nessuno">Nessuno</option>
+            <option value="promo">Promo</option>
+            <option value="flash">Flash</option>
+            <option value="stagionale">Stagionale</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        Descrizione breve
+        <textarea rows="3" formControlName="shortDescription"></textarea>
+      </label>
+
+      <label>
+        Descrizione
+        <textarea rows="6" formControlName="description"></textarea>
+      </label>
+
+      <label>
+        Codici correlati separati da virgola
+        <input type="text" formControlName="relatedProductCodesText" />
+      </label>
+
+      <div class="related-actions">
+        <button type="button" class="ghost" (click)="openLinkProductsModal()">
+          Collega prodotti
+        </button>
+      </div>
+
+      <label>
+        File immagine (opzionale)
+        <input
+          type="file"
+          accept="image/*"
+          (change)="onImageSelected($event)"
+        />
+        <span class="helper">{{ selectedFileName() }}</span>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="isSaving()">
+          <span *ngIf="!isSaving(); else savingLabel">
+            {{ editingProductCode() ? "Aggiorna prodotto" : "Salva prodotto" }}
+          </span>
+          <ng-template #savingLabel>Salvataggio...</ng-template>
+        </button>
+        <button type="button" class="ghost" (click)="cancelEdit()">
+          Annulla
+        </button>
+      </div>
+    </form>
+
+    <p class="status success" *ngIf="statusMessage()">{{ statusMessage() }}</p>
+    <p class="status error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+    <section class="catalog-preview" *ngIf="!isEditorPage()">
+      <h2>Prodotti attuali</h2>
+      <p>
+        {{ filteredProducts().length }} elementi visibili su
+        {{ products().length }}.
+      </p>
+
+      <div class="table-tools">
+        <label>
+          Cerca
+          <input
+            type="search"
+            placeholder="Cerca per nome o descrizione..."
+            [value]="tableSearch()"
+            (input)="tableSearch.set($any($event.target).value)"
+          />
+        </label>
+
+        <label>
+          Categoria
+          <select
+            [value]="categoryFilter()"
+            (change)="onTableCategoryFilterChange($any($event.target).value)"
+          >
+            <option value="">Tutte</option>
+            @for (category of categoryOptions; track category.slug) {
+              <option [value]="category.slug">{{ category.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Sottocategoria
+          <select
+            [value]="subcategoryFilter()"
+            (change)="subcategoryFilter.set($any($event.target).value)"
+          >
+            <option value="">Tutte</option>
+            @for (
+              subcategory of tableSubcategoryOptions();
+              track subcategory.slug
+            ) {
+              <option [value]="subcategory.slug">
+                {{ subcategory.label }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Promo
+          <select
+            [value]="promoFilter()"
+            (change)="promoFilter.set($any($event.target).value)"
+          >
+            <option value="all">Tutti</option>
+            <option value="with-promo">Con promo</option>
+            <option value="without-promo">Senza promo</option>
+          </select>
+        </label>
+      </div>
+
+      <div
+        class="table-wrap"
+        *ngIf="filteredProducts().length > 0; else emptyProducts"
+      >
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="isAllSelected()"
+                  (change)="toggleAllSelections($any($event.target).checked)"
+                />
+              </th>
+              <th>Codice</th>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th>Sottocategoria</th>
+              <th>Prezzo base</th>
+              <th>Promo</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              *ngFor="
+                let product of filteredProducts();
+                trackBy: trackByProductId
+              "
+            >
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(product.code)"
+                  (change)="
+                    toggleProductSelection(
+                      product.code,
+                      $any($event.target).checked
+                    )
+                  "
+                />
+              </td>
+              <td>{{ product.code }}</td>
+              <td>{{ product.name }}</td>
+              <td>{{ product.category }}</td>
+              <td>{{ product.subcategory }}</td>
+              <td>{{ formatPrice(product.basePrice) }}</td>
+              <td>
+                <span
+                  class="promo-pill"
+                  [class.promo-pill--on]="product.isOffer"
+                  [class.promo-pill--off]="!product.isOffer"
+                >
+                  {{ product.isOffer ? "Attiva" : "Disattiva" }}
+                </span>
+              </td>
+              <td>
+                <div class="item-actions">
+                  <button
+                    type="button"
+                    class="small"
+                    (click)="editProduct(product)"
+                  >
+                    Modifica
+                  </button>
+                  <button
+                    type="button"
+                    class="small danger"
+                    [disabled]="isDeleting()"
+                    (click)="deleteProduct(product)"
+                  >
+                    Elimina
+                  </button>
+                  <button
+                    type="button"
+                    class="small ghost"
+                    [disabled]="isSaving()"
+                    (click)="togglePromoForProduct(product)"
+                  >
+                    {{ product.isOffer ? "Disattiva promo" : "Attiva promo" }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #emptyProducts>
+        <p>Nessun prodotto trovato con i filtri correnti.</p>
+      </ng-template>
+    </section>
+  </ng-container>
+
+  <section
+    *ngIf="isEditorPage() && showLinkProductsModal()"
+    class="link-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Collega prodotti correlati"
+  >
+    <div class="link-modal__backdrop" (click)="closeLinkProductsModal()"></div>
+
+    <div class="link-modal__panel">
+      <div class="link-modal__header">
+        <h2>Collega prodotti correlati</h2>
+        <button
+          type="button"
+          class="ghost small"
+          (click)="closeLinkProductsModal()"
+        >
+          Chiudi
+        </button>
+      </div>
+
+      <div class="link-modal__filters">
+        <label>
+          Categoria
+          <select
+            [value]="linkingCategorySlug()"
+            (change)="onLinkingCategoryChange($any($event.target).value)"
+          >
+            <option value="">Seleziona categoria</option>
+            @for (category of categoryOptions; track category.slug) {
+              <option [value]="category.slug">{{ category.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Sottocategoria
+          <select
+            [value]="linkingSubcategorySlug()"
+            (change)="onLinkingSubcategoryChange($any($event.target).value)"
+          >
+            <option value="">Tutte</option>
+            @for (
+              subcategory of getLinkingSubcategoryOptions();
+              track subcategory.slug
+            ) {
+              <option [value]="subcategory.slug">
+                {{ subcategory.label }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <button
+          type="button"
+          (click)="searchLinkableProducts()"
+          [disabled]="isLinkingSearchLoading()"
+        >
+          {{ isLinkingSearchLoading() ? "Ricerca..." : "Cerca" }}
+        </button>
+      </div>
+
+      <p class="status error" *ngIf="linkingErrorMessage()">
+        {{ linkingErrorMessage() }}
+      </p>
+
+      <div class="link-modal__list" *ngIf="linkingResults().length > 0">
+        <article
+          *ngFor="
+            let item of linkingResults();
+            trackBy: trackByLinkingProductId
+          "
+          class="link-modal__item"
+        >
+          <label class="select-box">
+            <input
+              type="checkbox"
+              [checked]="isLinkingProductSelected(item.code)"
+              (change)="
+                toggleLinkingProduct(item.code, $any($event.target).checked)
+              "
+            />
+            <span>{{ item.name }}</span>
+          </label>
+
+          <small>{{ item.code }} · {{ item.subcategory }}</small>
+        </article>
+      </div>
+
+      <div class="link-modal__actions">
+        <button type="button" class="ghost" (click)="closeLinkProductsModal()">
+          Annulla
+        </button>
+        <button
+          type="button"
+          (click)="addLinkedProducts()"
+          [disabled]="linkingSelectedCodes().length === 0"
+        >
+          Aggiungi selezionati
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <a class="back-link" href="/">Torna alla home</a>
+</section>

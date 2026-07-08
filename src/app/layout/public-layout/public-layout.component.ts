@@ -1,8 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SiteHeaderComponent } from '../site-header/site-header.component';
 import { SiteFooterComponent } from '../site-footer/site-footer.component';
-import { CatalogService } from '../../core/services/catalog.service';
 
 @Component({
   selector: 'app-public-layout',
@@ -16,10 +15,4 @@ import { CatalogService } from '../../core/services/catalog.service';
     <app-site-footer />
   `,
 })
-export class PublicLayoutComponent implements OnInit {
-  private readonly catalogService = inject(CatalogService);
-
-  ngOnInit(): void {
-    this.catalogService.loadProducts();
-  }
-}
+export class PublicLayoutComponent {}

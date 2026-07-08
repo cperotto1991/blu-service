@@ -1,15 +1,14 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { Product } from '../models/product.model';
 import { QuoteRequest } from '../models/catalog.models';
+import { FirebaseDataService } from './firebase-data.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CatalogService {
-  private readonly http = inject(HttpClient);
-  private readonly apiBaseUrl = environment.apiBaseUrl;
+  private readonly firebaseDataService = inject(FirebaseDataService);
 
   private readonly productsSignal = signal<Product[]>([]);
   private readonly selectedProductSignal = signal<Product | undefined>(
@@ -21,41 +20,116 @@ export class CatalogService {
   );
   readonly selectedProduct = computed(() => this.selectedProductSignal());
 
-  loadProducts(): void {
-    this.http.get<Product[]>(`${this.apiBaseUrl}/products`).subscribe({
-      next: (products) => this.productsSignal.set(products),
-      error: (error) => {
-        console.error('Impossibile caricare i prodotti:', error);
-        this.productsSignal.set([]);
-      },
-    });
+  async loadProducts(categorySlug?: string | null): Promise<void> {
+    try {
+      const products =
+        await this.firebaseDataService.listProducts(categorySlug);
+      this.productsSignal.set(products);
+    } catch (error) {
+      console.error('Impossibile caricare i prodotti da Firebase:', error);
+      this.productsSignal.set([]);
+    }
   }
 
-  loadProductById(id: number): void {
-    this.http.get<Product>(`${this.apiBaseUrl}/products/${id}`).subscribe({
-      next: (product) => {
-        this.selectedProductSignal.set(product);
-        this.productsSignal.update((items) => {
-          const existingIndex = items.findIndex((item) => item.id === id);
-          if (existingIndex !== -1) {
-            const updated = [...items];
-            updated[existingIndex] = product;
-            return updated;
-          }
-          return [...items, product];
-        });
-      },
-      error: (error) => {
-        console.error('Impossibile caricare il prodotto:', error);
+  async loadOffers(): Promise<void> {
+    try {
+      const offers = await this.firebaseDataService.listOffers();
+      this.productsSignal.set(offers);
+    } catch (error) {
+      console.error('Impossibile caricare le offerte da Firebase:', error);
+      this.productsSignal.set([]);
+    }
+  }
+
+  async loadProductById(id: number): Promise<void> {
+    try {
+      const product = await this.firebaseDataService.getProductById(id);
+
+      if (!product) {
         this.selectedProductSignal.set(undefined);
-      },
-    });
+        return;
+      }
+
+      this.selectedProductSignal.set(product);
+
+      const relatedCodes = product.relatedProductCodes ?? [];
+      const relatedProducts = relatedCodes.length
+        ? await this.firebaseDataService.listProductsByCodes(relatedCodes)
+        : [];
+
+      this.productsSignal.update((items) => {
+        const merged = new Map<number, Product>();
+
+        for (const item of items) {
+          merged.set(item.id, item);
+        }
+
+        merged.set(product.id, product);
+
+        for (const related of relatedProducts) {
+          merged.set(related.id, related);
+        }
+
+        return Array.from(merged.values());
+      });
+    } catch (error) {
+      console.error('Impossibile caricare il prodotto da Firebase:', error);
+      this.selectedProductSignal.set(undefined);
+    }
+  }
+
+  async loadProductByCode(code: string): Promise<void> {
+    try {
+      const normalizedCode = code.trim().toUpperCase();
+      const product =
+        await this.firebaseDataService.getProductByCode(normalizedCode);
+
+      if (!product) {
+        this.selectedProductSignal.set(undefined);
+        return;
+      }
+
+      this.selectedProductSignal.set(product);
+
+      const relatedCodes = product.relatedProductCodes ?? [];
+      const relatedProducts = relatedCodes.length
+        ? await this.firebaseDataService.listProductsByCodes(relatedCodes)
+        : [];
+
+      this.productsSignal.update((items) => {
+        const merged = new Map<number, Product>();
+
+        for (const item of items) {
+          merged.set(item.id, item);
+        }
+
+        merged.set(product.id, product);
+
+        for (const related of relatedProducts) {
+          merged.set(related.id, related);
+        }
+
+        return Array.from(merged.values());
+      });
+    } catch (error) {
+      console.error('Impossibile caricare il prodotto da Firebase:', error);
+      this.selectedProductSignal.set(undefined);
+    }
   }
 
   getById(id: number): Product | undefined {
     return (
       this.productsSignal().find((p) => p.id === id) ??
       this.selectedProductSignal()
+    );
+  }
+
+  getByCode(code: string): Product | undefined {
+    const normalizedCode = code.trim().toUpperCase();
+    return (
+      this.productsSignal().find(
+        (p) => p.code.toUpperCase() === normalizedCode,
+      ) ?? this.selectedProductSignal()
     );
   }
 

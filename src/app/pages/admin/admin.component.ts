@@ -1,0 +1,1082 @@
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  Component,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CatalogService } from '../../core/services/catalog.service';
+import { FirebaseAuthService } from '../../core/services/firebase-auth.service';
+import { FirebaseDataService } from '../../core/services/firebase-data.service';
+import { Product } from '../../core/models/product.model';
+
+type AdminSubcategoryOption = {
+  slug: string;
+  label: string;
+};
+
+type AdminCategoryOption = {
+  slug: string;
+  label: string;
+  subcategories: AdminSubcategoryOption[];
+};
+
+type OfferType = 'nessuno' | 'promo' | 'flash' | 'stagionale';
+type PromoFilter = 'all' | 'with-promo' | 'without-promo';
+
+@Component({
+  selector: 'app-admin',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './admin.component.html',
+  styleUrl: './admin.component.scss',
+})
+export class AdminComponent {
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(FirebaseAuthService);
+  private readonly dataService = inject(FirebaseDataService);
+  private readonly catalogService = inject(CatalogService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
+
+  readonly user = this.authService.user;
+  readonly isAuthReady = this.authService.isReady;
+  readonly isLoggedIn = this.authService.isLoggedIn;
+  readonly isAdmin = this.authService.isAdmin;
+  readonly products = this.catalogService.products;
+  readonly tableSearch = signal('');
+  readonly promoFilter = signal<PromoFilter>('all');
+  readonly categoryFilter = signal('');
+  readonly subcategoryFilter = signal('');
+  readonly tableSubcategoryOptions = computed(() => {
+    const categorySlug = this.categoryFilter().trim();
+
+    if (!categorySlug) {
+      return this.categoryOptions.flatMap((category) => category.subcategories);
+    }
+
+    return this.findCategoryOption(categorySlug)?.subcategories ?? [];
+  });
+  readonly filteredProducts = computed(() => {
+    const query = this.tableSearch().trim().toLowerCase();
+    const promoFilter = this.promoFilter();
+    const categoryFilter = this.categoryFilter().trim();
+    const subcategoryFilter = this.subcategoryFilter().trim();
+
+    let items = this.products();
+
+    if (categoryFilter) {
+      items = items.filter(
+        (product) => product.categorySlug === categoryFilter,
+      );
+    }
+
+    if (subcategoryFilter) {
+      items = items.filter(
+        (product) => product.subcategorySlug === subcategoryFilter,
+      );
+    }
+
+    if (promoFilter === 'with-promo') {
+      items = items.filter((product) => product.isOffer);
+    }
+
+    if (promoFilter === 'without-promo') {
+      items = items.filter((product) => !product.isOffer);
+    }
+
+    if (!query) {
+      return items;
+    }
+
+    return items.filter((product) => {
+      const searchable = [
+        product.code,
+        product.name,
+        product.shortDescription,
+        product.description,
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  });
+  readonly isSaving = signal(false);
+  readonly isDeleting = signal(false);
+  readonly editingProductCode = signal<string | null>(null);
+  readonly selectedProductCodes = signal<string[]>([]);
+  readonly showProductForm = signal(false);
+  readonly isEditorPage = signal(false);
+  readonly hasSelection = computed(
+    () => this.selectedProductCodes().length > 0,
+  );
+  readonly statusMessage = signal('');
+  readonly errorMessage = signal('');
+  readonly selectedFileName = signal('Nessun file selezionato');
+  readonly showLinkProductsModal = signal(false);
+  readonly linkingCategorySlug = signal('');
+  readonly linkingSubcategorySlug = signal('');
+  readonly linkingResults = signal<Product[]>([]);
+  readonly linkingSelectedCodes = signal<string[]>([]);
+  readonly isLinkingSearchLoading = signal(false);
+  readonly linkingErrorMessage = signal('');
+  readonly categoryOptions: AdminCategoryOption[] = [
+    {
+      slug: 'depuratori',
+      label: 'Depuratori',
+      subcategories: [
+        { slug: 'uso-domestico', label: 'Uso domestico' },
+        { slug: 'bar-ristoranti', label: 'Bar e Ristoranti' },
+        { slug: 'hotel', label: 'Hotel' },
+        {
+          slug: 'uffici-locali-pubblici',
+          label: 'Uffici e locali pubblici',
+        },
+      ],
+    },
+    {
+      slug: 'addolcitori',
+      label: 'Addolcitori',
+      subcategories: [
+        { slug: 'cabinati', label: 'Cabinati' },
+        { slug: 'doppio-corpo', label: 'Doppio corpo' },
+        {
+          slug: 'decalcificatori-elettronici',
+          label: 'Decalcificatori elettronici',
+        },
+      ],
+    },
+    {
+      slug: 'sanificazione',
+      label: 'Sanificazione',
+      subcategories: [
+        {
+          slug: 'ozonizzatori-acqua',
+          label: 'Ozonizzatori acqua completi',
+        },
+        { slug: 'accessori-ozonizzatori', label: 'Accessori ozonizzatori' },
+        { slug: 'sistemi-uv', label: 'Sistemi UV acqua completi' },
+      ],
+    },
+    {
+      slug: 'miscelatori',
+      label: 'Miscelatori',
+      subcategories: [
+        { slug: 'rubinetti-3-vie', label: 'Rubinetti 3 vie' },
+        { slug: 'rubinetti-4-vie', label: 'Rubinetti 4 vie' },
+        { slug: 'rubinetti-5-vie', label: 'Rubinetti 5 vie' },
+      ],
+    },
+    {
+      slug: 'accessori',
+      label: 'Accessori',
+      subcategories: [
+        { slug: 'pattumiere', label: 'Pattumiere' },
+        { slug: 'tritarifiuti', label: 'Tritarifiuti' },
+        { slug: 'borracce-termiche', label: 'Borracce termiche' },
+      ],
+    },
+  ];
+
+  readonly loginForm = this.fb.nonNullable.group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
+  });
+
+  readonly productForm = this.fb.nonNullable.group({
+    code: ['', [Validators.required]],
+    name: ['', [Validators.required]],
+    shortDescription: ['', [Validators.required]],
+    description: ['', [Validators.required]],
+    categorySlug: ['', [Validators.required]],
+    subcategorySlug: ['', [Validators.required]],
+    basePrice: [0, [Validators.required, Validators.min(0)]],
+    finalPrice: [0, [Validators.min(0)]],
+    isOffer: [false],
+    offerType: ['nessuno' as OfferType],
+    discountPercent: [0, [Validators.min(0), Validators.max(100)]],
+    relatedProductCodesText: [''],
+  });
+
+  private selectedImageFile: File | null = null;
+  private currentImageUrl = '';
+
+  constructor() {
+    if (this.isBrowser) {
+      void this.catalogService.loadProducts();
+    }
+
+    this.resetProductForm();
+    this.updateOfferValidators(false);
+
+    this.route.url.subscribe(() => {
+      void this.syncPageModeFromRoute();
+    });
+
+    this.route.paramMap.subscribe(() => {
+      void this.syncPageModeFromRoute();
+    });
+  }
+
+  async signIn(): Promise<void> {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    try {
+      const { email, password } = this.loginForm.getRawValue();
+      await this.authService.signIn(email, password);
+      this.statusMessage.set('Accesso completato.');
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    }
+  }
+
+  async signOut(): Promise<void> {
+    await this.authService.signOut();
+    this.showProductForm.set(false);
+    this.isEditorPage.set(false);
+    this.editingProductCode.set(null);
+    this.selectedProductCodes.set([]);
+    this.statusMessage.set('Sei uscito dalla sessione.');
+  }
+
+  onTableCategoryFilterChange(categorySlug: string): void {
+    this.categoryFilter.set(categorySlug);
+
+    if (
+      this.subcategoryFilter() &&
+      !this.tableSubcategoryOptions().some(
+        (subcategory) => subcategory.slug === this.subcategoryFilter(),
+      )
+    ) {
+      this.subcategoryFilter.set('');
+    }
+  }
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0] ?? null;
+    this.selectedImageFile = file;
+    this.selectedFileName.set(file?.name ?? 'Nessun file selezionato');
+  }
+
+  async saveProduct(): Promise<void> {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+
+    if (this.productForm.invalid) {
+      this.productForm.markAllAsTouched();
+      this.errorMessage.set(
+        'Compila tutti i campi obbligatori prima di salvare.',
+      );
+      return;
+    }
+
+    this.isSaving.set(true);
+    this.statusMessage.set('Salvataggio in corso...');
+
+    try {
+      const value = this.productForm.getRawValue();
+      const product = this.buildProduct(value);
+      const wasEditing = this.editingProductCode() !== null;
+      const savedProduct = await this.dataService.saveProduct(
+        product,
+        this.selectedImageFile,
+      );
+
+      this.statusMessage.set(
+        wasEditing
+          ? `Prodotto aggiornato: ${savedProduct.name}`
+          : `Prodotto salvato: ${savedProduct.name}`,
+      );
+      await this.catalogService.loadProducts();
+
+      if (wasEditing) {
+        this.editingProductCode.set(savedProduct.code);
+        this.showProductForm.set(true);
+      } else {
+        this.resetProductForm();
+        this.editingProductCode.set(null);
+        this.showProductForm.set(false);
+        void this.router.navigate(['/admin']);
+      }
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  startAddingProduct(): void {
+    void this.router.navigate(['/admin/prodotto/nuovo']);
+  }
+
+  editProduct(product: Product): void {
+    void this.router.navigate(['/admin/prodotto', product.code]);
+  }
+
+  async togglePromoForProduct(product: Product): Promise<void> {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.isSaving.set(true);
+
+    try {
+      const nextIsOffer = !product.isOffer;
+      const nextDiscount = nextIsOffer
+        ? this.clampDiscount(product.discountPercent ?? 10)
+        : 0;
+      const nextOfferType = nextIsOffer
+        ? (product.offerType ?? 'promo')
+        : undefined;
+      const updatedProduct: Product = {
+        ...product,
+        isOffer: nextIsOffer,
+        offerType: nextOfferType,
+        offerLabel: nextOfferType
+          ? this.getOfferTypeLabel(nextOfferType)
+          : undefined,
+        discountPercent: nextIsOffer ? nextDiscount : undefined,
+        finalPrice: nextIsOffer
+          ? this.calculateDiscountedPrice(product.basePrice, nextDiscount)
+          : undefined,
+      };
+
+      await this.dataService.saveProduct(updatedProduct);
+      await this.catalogService.loadProducts();
+      this.statusMessage.set(
+        nextIsOffer
+          ? `Promo attivata per ${product.name}`
+          : `Promo disattivata per ${product.name}`,
+      );
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  private openEditorWithProduct(product: Product): void {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.editingProductCode.set(product.code);
+    this.isEditorPage.set(true);
+    this.showProductForm.set(true);
+    this.selectedImageFile = null;
+    this.selectedFileName.set('Nessun file selezionato');
+    this.currentImageUrl = product.imageUrl;
+
+    this.productForm.patchValue({
+      code: product.code,
+      name: product.name,
+      shortDescription: product.shortDescription,
+      description: product.description,
+      categorySlug: product.categorySlug,
+      subcategorySlug: product.subcategorySlug,
+      basePrice: product.basePrice,
+      finalPrice: this.getFinalPriceForProduct(product),
+      isOffer: product.isOffer,
+      offerType: this.inferOfferType(product.offerLabel),
+      discountPercent: product.discountPercent ?? 0,
+      relatedProductCodesText: (product.relatedProductCodes ?? []).join(', '),
+    });
+
+    this.updateOfferValidators(product.isOffer);
+
+    this.applyCategorySelection(product.categorySlug, product.subcategorySlug);
+  }
+
+  onCategorySelectionChange(categorySlug: string): void {
+    this.applyCategorySelection(categorySlug);
+  }
+
+  openLinkProductsModal(): void {
+    this.linkingErrorMessage.set('');
+    this.showLinkProductsModal.set(true);
+    this.linkingCategorySlug.set(this.productForm.value.categorySlug ?? '');
+    this.linkingSubcategorySlug.set('');
+    this.linkingResults.set([]);
+    this.linkingSelectedCodes.set(
+      this.splitCsv(this.productForm.value.relatedProductCodesText ?? ''),
+    );
+  }
+
+  closeLinkProductsModal(): void {
+    this.showLinkProductsModal.set(false);
+    this.linkingErrorMessage.set('');
+    this.isLinkingSearchLoading.set(false);
+  }
+
+  onLinkingCategoryChange(categorySlug: string): void {
+    this.linkingCategorySlug.set(categorySlug);
+    this.linkingSubcategorySlug.set('');
+    this.linkingResults.set([]);
+    this.linkingErrorMessage.set('');
+  }
+
+  onLinkingSubcategoryChange(subcategorySlug: string): void {
+    this.linkingSubcategorySlug.set(subcategorySlug);
+  }
+
+  getLinkingSubcategoryOptions(): AdminSubcategoryOption[] {
+    return (
+      this.findCategoryOption(this.linkingCategorySlug())?.subcategories ?? []
+    );
+  }
+
+  async searchLinkableProducts(): Promise<void> {
+    const categorySlug = this.linkingCategorySlug().trim();
+
+    if (!categorySlug) {
+      this.linkingErrorMessage.set('Seleziona prima una categoria.');
+      return;
+    }
+
+    this.linkingErrorMessage.set('');
+    this.isLinkingSearchLoading.set(true);
+
+    try {
+      const products = await this.dataService.listProducts(categorySlug);
+      const selectedSubcategory = this.linkingSubcategorySlug().trim();
+      const currentCode = (this.productForm.value.code ?? '')
+        .trim()
+        .toUpperCase();
+      const filtered = products
+        .filter((product) =>
+          selectedSubcategory
+            ? product.subcategorySlug === selectedSubcategory
+            : true,
+        )
+        .filter((product) => product.code.trim().toUpperCase() !== currentCode)
+        .sort((a, b) => a.name.localeCompare(b.name, 'it'));
+
+      this.linkingResults.set(filtered);
+
+      if (!filtered.length) {
+        this.linkingErrorMessage.set(
+          'Nessun prodotto trovato con i filtri selezionati.',
+        );
+      }
+    } catch (error) {
+      this.linkingErrorMessage.set(this.getErrorMessage(error));
+      this.linkingResults.set([]);
+    } finally {
+      this.isLinkingSearchLoading.set(false);
+    }
+  }
+
+  toggleLinkingProduct(code: string, checked: boolean): void {
+    const normalizedCode = code.trim().toUpperCase();
+
+    this.linkingSelectedCodes.update((codes) => {
+      if (checked) {
+        return codes.includes(normalizedCode)
+          ? codes
+          : [...codes, normalizedCode];
+      }
+
+      return codes.filter((item) => item !== normalizedCode);
+    });
+  }
+
+  isLinkingProductSelected(code: string): boolean {
+    return this.linkingSelectedCodes().includes(code.trim().toUpperCase());
+  }
+
+  addLinkedProducts(): void {
+    const current = this.splitCsv(
+      this.productForm.value.relatedProductCodesText ?? '',
+    );
+    const mergedCodes = Array.from(
+      new Set([...current, ...this.linkingSelectedCodes()]),
+    );
+
+    this.productForm.patchValue({
+      relatedProductCodesText: mergedCodes.join(', '),
+    });
+
+    this.closeLinkProductsModal();
+  }
+
+  onBasePriceInput(): void {
+    const { basePrice, discountPercent, isOffer } =
+      this.productForm.getRawValue();
+    const normalizedBase = this.normalizeMoney(basePrice);
+
+    if (!isOffer) {
+      this.productForm.patchValue(
+        {
+          basePrice: normalizedBase,
+          finalPrice: normalizedBase,
+          discountPercent: 0,
+        },
+        { emitEvent: false },
+      );
+      return;
+    }
+
+    const normalizedDiscount = this.clampDiscount(discountPercent);
+    const finalPrice = this.calculateDiscountedPrice(
+      normalizedBase,
+      normalizedDiscount,
+    );
+
+    this.productForm.patchValue(
+      {
+        basePrice: normalizedBase,
+        discountPercent: normalizedDiscount,
+        finalPrice,
+      },
+      { emitEvent: false },
+    );
+  }
+
+  onDiscountPercentInput(): void {
+    const { basePrice, discountPercent } = this.productForm.getRawValue();
+    const normalizedBase = this.normalizeMoney(basePrice);
+    const normalizedDiscount = this.clampDiscount(discountPercent);
+    const finalPrice = this.calculateDiscountedPrice(
+      normalizedBase,
+      normalizedDiscount,
+    );
+
+    this.productForm.patchValue(
+      {
+        basePrice: normalizedBase,
+        discountPercent: normalizedDiscount,
+        finalPrice,
+        isOffer: normalizedDiscount > 0,
+      },
+      { emitEvent: false },
+    );
+  }
+
+  onFinalPriceInput(): void {
+    const { basePrice, finalPrice } = this.productForm.getRawValue();
+    const normalizedBase = this.normalizeMoney(basePrice);
+    const normalizedFinal = this.normalizeMoney(finalPrice);
+
+    if (normalizedBase <= 0) {
+      this.productForm.patchValue(
+        {
+          basePrice: 0,
+          finalPrice: 0,
+          discountPercent: 0,
+          isOffer: false,
+        },
+        { emitEvent: false },
+      );
+      return;
+    }
+
+    const boundedFinal = Math.min(normalizedBase, normalizedFinal);
+    const discountPercent = this.clampDiscount(
+      ((normalizedBase - boundedFinal) / normalizedBase) * 100,
+    );
+
+    this.productForm.patchValue(
+      {
+        basePrice: normalizedBase,
+        finalPrice: boundedFinal,
+        discountPercent,
+        isOffer: discountPercent > 0,
+      },
+      { emitEvent: false },
+    );
+  }
+
+  onOfferToggle(checked: boolean): void {
+    const { basePrice } = this.productForm.getRawValue();
+    const normalizedBase = this.normalizeMoney(basePrice);
+
+    this.updateOfferValidators(checked);
+
+    if (!checked) {
+      this.productForm.patchValue(
+        {
+          isOffer: false,
+          offerType: 'nessuno',
+          discountPercent: 0,
+          finalPrice: normalizedBase,
+        },
+        { emitEvent: false },
+      );
+      return;
+    }
+
+    const { discountPercent } = this.productForm.getRawValue();
+    const normalizedDiscount =
+      this.clampDiscount(discountPercent) > 0
+        ? this.clampDiscount(discountPercent)
+        : 10;
+
+    this.productForm.patchValue(
+      {
+        isOffer: true,
+        offerType: 'promo',
+        discountPercent: normalizedDiscount,
+        finalPrice: this.calculateDiscountedPrice(
+          normalizedBase,
+          normalizedDiscount,
+        ),
+      },
+      { emitEvent: false },
+    );
+  }
+
+  onSubcategorySelectionChange(subcategorySlug: string): void {
+    this.productForm.patchValue({
+      subcategorySlug,
+    });
+  }
+
+  getCurrentSubcategoryOptions(): AdminSubcategoryOption[] {
+    return (
+      this.findCategoryOption(this.productForm.value.categorySlug)
+        ?.subcategories ?? []
+    );
+  }
+
+  cancelEdit(): void {
+    void this.router.navigate(['/admin']);
+  }
+
+  async deleteProduct(product: Product): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    const confirmDelete = window.confirm(`Vuoi eliminare "${product.name}"?`);
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    this.isDeleting.set(true);
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+
+    try {
+      await this.dataService.deleteProduct(product.code);
+      await this.catalogService.loadProducts();
+      this.selectedProductCodes.update((codes) =>
+        codes.filter((code) => code !== product.code),
+      );
+
+      if (this.editingProductCode() === product.code) {
+        this.cancelEdit();
+      }
+
+      this.statusMessage.set(`Prodotto eliminato: ${product.name}`);
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isDeleting.set(false);
+    }
+  }
+
+  async deleteSelectedProducts(): Promise<void> {
+    if (!this.isBrowser || !this.hasSelection()) {
+      return;
+    }
+
+    const selectedCodes = this.selectedProductCodes();
+    const confirmDelete = window.confirm(
+      `Vuoi eliminare ${selectedCodes.length} prodotti selezionati?`,
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    this.isDeleting.set(true);
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+
+    try {
+      await this.dataService.deleteProducts(selectedCodes);
+      await this.catalogService.loadProducts();
+      this.selectedProductCodes.set([]);
+
+      if (
+        this.editingProductCode() !== null &&
+        selectedCodes.includes(this.editingProductCode()!)
+      ) {
+        this.cancelEdit();
+      }
+
+      this.statusMessage.set(
+        `${selectedCodes.length} prodotti eliminati con successo.`,
+      );
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isDeleting.set(false);
+    }
+  }
+
+  toggleProductSelection(productCode: string, checked: boolean): void {
+    this.selectedProductCodes.update((codes) => {
+      if (checked) {
+        return codes.includes(productCode) ? codes : [...codes, productCode];
+      }
+
+      return codes.filter((code) => code !== productCode);
+    });
+  }
+
+  toggleAllSelections(checked: boolean): void {
+    if (!checked) {
+      this.selectedProductCodes.set([]);
+      return;
+    }
+
+    this.selectedProductCodes.set(
+      this.filteredProducts().map((product) => product.code),
+    );
+  }
+
+  isSelected(productCode: string): boolean {
+    return this.selectedProductCodes().includes(productCode);
+  }
+
+  isAllSelected(): boolean {
+    const products = this.filteredProducts();
+    const selected = this.selectedProductCodes();
+
+    return (
+      products.length > 0 &&
+      products.every((product) => selected.includes(product.code))
+    );
+  }
+
+  trackByLinkingProductId(_index: number, product: Product): number {
+    return product.id;
+  }
+
+  private buildProduct(value: {
+    code: string;
+    name: string;
+    shortDescription: string;
+    description: string;
+    categorySlug: string;
+    subcategorySlug: string;
+    basePrice: number;
+    finalPrice: number;
+    isOffer: boolean;
+    offerType: OfferType;
+    discountPercent: number;
+    relatedProductCodesText: string;
+  }): Product {
+    const normalizedCode = value.code.trim().toUpperCase();
+    const normalizedBasePrice = this.normalizeMoney(value.basePrice);
+    const normalizedFinalPrice = this.normalizeMoney(value.finalPrice);
+    const normalizedDiscount = this.clampDiscount(value.discountPercent);
+    const normalizedCategorySlug = value.categorySlug.trim();
+    const normalizedSubcategorySlug = value.subcategorySlug.trim();
+
+    return {
+      id: this.createNumericIdFromCode(normalizedCode),
+      slug: '',
+      code: normalizedCode,
+      name: value.name.trim(),
+      category: normalizedCategorySlug,
+      categorySlug: normalizedCategorySlug,
+      groupId: '',
+      subcategory: normalizedSubcategorySlug,
+      subcategorySlug: normalizedSubcategorySlug,
+      shortDescription: value.shortDescription.trim(),
+      description: value.description.trim(),
+      basePrice: normalizedBasePrice,
+      finalPrice:
+        value.isOffer && normalizedDiscount > 0
+          ? Math.min(normalizedBasePrice, normalizedFinalPrice)
+          : undefined,
+      imageUrl: this.currentImageUrl,
+      tags: [],
+      isOffer: value.isOffer,
+      offerLabel: value.isOffer
+        ? this.getOfferTypeLabel(value.offerType)
+        : undefined,
+      offerType:
+        value.isOffer && value.offerType !== 'nessuno'
+          ? value.offerType
+          : undefined,
+      discountPercent:
+        value.isOffer && normalizedDiscount > 0
+          ? normalizedDiscount
+          : undefined,
+      relatedProductCodes: this.splitCsv(value.relatedProductCodesText),
+      optionGroups: [],
+    };
+  }
+
+  private splitCsv(value: string): string[] {
+    return value
+      .split(',')
+      .map((item) => item.trim().toUpperCase())
+      .filter(Boolean);
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return 'Si è verificato un errore inatteso.';
+  }
+
+  trackByProductId(_index: number, product: Product): string {
+    return product.code;
+  }
+
+  formatPrice(value: number): string {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+
+  getDiscountedPricePreview(): number | null {
+    const { basePrice, discountPercent, isOffer } =
+      this.productForm.getRawValue();
+
+    if (!isOffer || !discountPercent || discountPercent <= 0) {
+      return null;
+    }
+
+    return this.calculateDiscountedPrice(basePrice, discountPercent);
+  }
+
+  private calculateDiscountedPrice(
+    basePrice: number,
+    discountPercent: number,
+  ): number {
+    const normalizedBase = this.normalizeMoney(basePrice);
+    const normalizedDiscount = this.clampDiscount(discountPercent);
+    const discountValue = (normalizedBase * normalizedDiscount) / 100;
+    return this.normalizeMoney(Math.max(0, normalizedBase - discountValue));
+  }
+
+  private clampDiscount(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.min(100, Math.round(value * 100) / 100));
+  }
+
+  private normalizeMoney(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.round(value * 100) / 100);
+  }
+
+  private getOfferTypeLabel(type: OfferType): string {
+    switch (type) {
+      case 'nessuno':
+        return '';
+      case 'flash':
+        return 'Offerta flash';
+      case 'stagionale':
+        return 'Offerta stagionale';
+      default:
+        return 'Promo';
+    }
+  }
+
+  private inferOfferType(label: string | undefined): OfferType {
+    const normalized = label?.toLowerCase().trim() ?? '';
+
+    if (!normalized) {
+      return 'nessuno';
+    }
+
+    if (normalized.includes('flash')) {
+      return 'flash';
+    }
+
+    if (normalized.includes('stagionale')) {
+      return 'stagionale';
+    }
+
+    return 'promo';
+  }
+
+  private getFinalPriceForProduct(product: Product): number {
+    if (typeof product.finalPrice === 'number' && product.finalPrice > 0) {
+      return this.normalizeMoney(product.finalPrice);
+    }
+
+    if (product.discountPercent && product.discountPercent > 0) {
+      return this.calculateDiscountedPrice(
+        product.basePrice,
+        product.discountPercent,
+      );
+    }
+
+    return this.normalizeMoney(product.basePrice);
+  }
+
+  private resetProductForm(): void {
+    const defaultCategory = this.categoryOptions[0];
+    const defaultSubcategory = defaultCategory?.subcategories[0];
+
+    this.productForm.patchValue({
+      code: '',
+      name: '',
+      shortDescription: '',
+      description: '',
+      categorySlug: defaultCategory?.slug ?? '',
+      subcategorySlug: defaultSubcategory?.slug ?? '',
+      basePrice: 0,
+      finalPrice: 0,
+      isOffer: false,
+      offerType: 'nessuno',
+      discountPercent: 0,
+      relatedProductCodesText: '',
+    });
+
+    this.updateOfferValidators(false);
+
+    this.selectedImageFile = null;
+    this.currentImageUrl = '';
+    this.selectedFileName.set('Nessun file selezionato');
+  }
+
+  private updateOfferValidators(isOffer: boolean): void {
+    const finalPriceControl = this.productForm.controls.finalPrice;
+    const discountControl = this.productForm.controls.discountPercent;
+    const offerTypeControl = this.productForm.controls.offerType;
+
+    if (isOffer) {
+      finalPriceControl.setValidators([Validators.required, Validators.min(0)]);
+      discountControl.setValidators([
+        Validators.required,
+        Validators.min(0),
+        Validators.max(100),
+      ]);
+      offerTypeControl.setValidators([Validators.required]);
+    } else {
+      finalPriceControl.setValidators([Validators.min(0)]);
+      discountControl.setValidators([Validators.min(0), Validators.max(100)]);
+      offerTypeControl.setValidators([]);
+    }
+
+    finalPriceControl.updateValueAndValidity({ emitEvent: false });
+    discountControl.updateValueAndValidity({ emitEvent: false });
+    offerTypeControl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private createNumericIdFromCode(code: string): number {
+    const normalized = code.trim().toUpperCase();
+
+    if (!normalized) {
+      return 0;
+    }
+
+    let hash = 0;
+
+    for (let index = 0; index < normalized.length; index += 1) {
+      hash = (hash * 31 + normalized.charCodeAt(index)) | 0;
+    }
+
+    return Math.abs(hash);
+  }
+
+  private applyCategorySelection(
+    categorySlug: string,
+    preferredSubcategorySlug?: string,
+  ): void {
+    const category = this.findCategoryOption(categorySlug);
+
+    if (!category) {
+      this.productForm.patchValue({
+        categorySlug: '',
+        subcategorySlug: '',
+      });
+      return;
+    }
+
+    const subcategory =
+      category.subcategories.find(
+        (item) => item.slug === preferredSubcategorySlug,
+      ) ?? category.subcategories[0];
+
+    this.productForm.patchValue({
+      categorySlug: category.slug,
+      subcategorySlug: subcategory?.slug ?? '',
+    });
+  }
+
+  private findCategoryOption(
+    categorySlug: string | null | undefined,
+  ): AdminCategoryOption | undefined {
+    const normalizedSlug = categorySlug?.trim() ?? '';
+    return this.categoryOptions.find((item) => item.slug === normalizedSlug);
+  }
+
+  private prepareNewProductForm(): void {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.editingProductCode.set(null);
+    this.resetProductForm();
+    this.showProductForm.set(true);
+    this.isEditorPage.set(true);
+  }
+
+  private async syncPageModeFromRoute(): Promise<void> {
+    const currentPath = this.router.url.split('?')[0] ?? '';
+    const isEditor = currentPath.startsWith('/admin/prodotto');
+
+    this.isEditorPage.set(isEditor);
+
+    if (!isEditor) {
+      this.showProductForm.set(false);
+      this.closeLinkProductsModal();
+      this.resetProductForm();
+      this.editingProductCode.set(null);
+      return;
+    }
+
+    const codeFromRoute = this.route.snapshot.paramMap.get('code');
+
+    if (!codeFromRoute) {
+      this.prepareNewProductForm();
+      return;
+    }
+
+    const normalizedCode = codeFromRoute.trim().toUpperCase();
+    const existing = this.products().find(
+      (product) => product.code.toUpperCase() === normalizedCode,
+    );
+
+    if (existing) {
+      this.openEditorWithProduct(existing);
+      return;
+    }
+
+    const product = await this.dataService.getProductByCode(normalizedCode);
+
+    if (!product) {
+      this.errorMessage.set('Prodotto non trovato.');
+      void this.router.navigate(['/admin']);
+      return;
+    }
+
+    this.openEditorWithProduct(product);
+  }
+}

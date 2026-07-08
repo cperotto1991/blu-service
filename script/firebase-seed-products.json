@@ -1,0 +1,152 @@
+[
+  {
+    "id": 1001,
+    "slug": "depuratore-acqua-base",
+    "code": "DEP-1001",
+    "name": "Depuratore Acqua Base",
+    "category": "Depuratori",
+    "categorySlug": "depuratori",
+    "groupId": "depuratori-dispenser",
+    "subcategory": "Uso domestico",
+    "subcategorySlug": "uso-domestico",
+    "shortDescription": "Soluzione compatta per casa e piccoli uffici.",
+    "description": "Depuratore configurabile per uso domestico, con installazione semplice e manutenzione programmata. Ideale per chi vuole migliorare la qualità dell'acqua in modo pratico e affidabile.",
+    "basePrice": 790,
+    "imageUrl": "/assets/images/depuratore.png",
+    "tags": ["depuratori", "uso domestico", "acqua filtrata", "configurabile"],
+    "isOffer": true,
+    "discountPercent": 10,
+    "offerLabel": "Promo lancio",
+    "relatedProductCodes": ["DEP-1002", "ACC-1003"],
+    "optionGroups": [
+      {
+        "id": "installazione",
+        "title": "Installazione",
+        "required": true,
+        "options": [
+          {
+            "id": "solo-fornitura",
+            "label": "Solo fornitura",
+            "priceDelta": 0
+          },
+          {
+            "id": "standard",
+            "label": "Installazione standard",
+            "priceDelta": 180
+          },
+          {
+            "id": "premium",
+            "label": "Installazione premium",
+            "priceDelta": 320
+          }
+        ]
+      },
+      {
+        "id": "manutenzione",
+        "title": "Manutenzione",
+        "required": true,
+        "options": [
+          {
+            "id": "base",
+            "label": "Nessuna manutenzione inclusa",
+            "priceDelta": 0
+          },
+          {
+            "id": "annuale",
+            "label": "Manutenzione annuale",
+            "priceDelta": 120
+          },
+          {
+            "id": "plus",
+            "label": "Manutenzione annuale + sanificazione",
+            "priceDelta": 220
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1002,
+    "slug": "addolcitore-famiglia-compact",
+    "code": "ADD-1002",
+    "name": "Addolcitore Famiglia Compact",
+    "category": "Addolcitori",
+    "categorySlug": "addolcitori",
+    "groupId": "addolcitori",
+    "subcategory": "Cabinati",
+    "subcategorySlug": "cabinati",
+    "shortDescription": "Addolcitore compatto per famiglie e appartamenti.",
+    "description": "Addolcitore ad alte prestazioni per ridurre il calcare e proteggere impianti, caldaie ed elettrodomestici. Soluzione compatta, elegante e facile da gestire.",
+    "basePrice": 1190,
+    "imageUrl": "/assets/images/addolcitore.png",
+    "tags": ["addolcitori", "calcare", "famiglia", "protezione impianti"],
+    "isOffer": false,
+    "relatedProductCodes": ["DEP-1001", "ACC-1003"],
+    "optionGroups": [
+      {
+        "id": "capacita",
+        "title": "Capacità",
+        "required": true,
+        "options": [
+          { "id": "base", "label": "Fino a 2 persone", "priceDelta": 0 },
+          { "id": "medium", "label": "Fino a 4 persone", "priceDelta": 160 },
+          { "id": "large", "label": "Fino a 6 persone", "priceDelta": 290 }
+        ]
+      },
+      {
+        "id": "servizi",
+        "title": "Servizi aggiuntivi",
+        "required": false,
+        "options": [
+          {
+            "id": "nessuno",
+            "label": "Nessun servizio aggiuntivo",
+            "priceDelta": 0
+          },
+          {
+            "id": "installazione",
+            "label": "Installazione inclusa",
+            "priceDelta": 240
+          },
+          {
+            "id": "manutenzione",
+            "label": "Pacchetto manutenzione 12 mesi",
+            "priceDelta": 180
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": 1003,
+    "slug": "kit-filtri-sottolavello-pro",
+    "code": "ACC-1003",
+    "name": "Kit Filtri Sottolavello Pro",
+    "category": "Accessori",
+    "categorySlug": "accessori",
+    "groupId": "accessori-installazione",
+    "subcategory": "Componenti di ricambio",
+    "subcategorySlug": "componenti-ricambio",
+    "shortDescription": "Kit completo di filtri per sottolavello.",
+    "description": "Set filtri professionale per installazione sottolavello, pensato per sostituzioni rapide e manutenzione semplice. Compatibile con molte soluzioni di filtrazione domestica e business.",
+    "basePrice": 149,
+    "imageUrl": "/assets/images/accessori.png",
+    "tags": ["accessori", "filtri", "sottolavello", "ricambi"],
+    "isOffer": true,
+    "discountPercent": 15,
+    "offerLabel": "Offerta ricambi",
+    "relatedProductCodes": ["DEP-1001", "ADD-1002"],
+    "optionGroups": [
+      {
+        "id": "quantita",
+        "title": "Quantità kit",
+        "required": true,
+        "options": [
+          { "id": "singolo", "label": "1 kit", "priceDelta": 0 },
+          { "id": "doppio", "label": "2 kit", "priceDelta": 129 },
+          { "id": "trio", "label": "3 kit", "priceDelta": 240 }
+        ]
+      }
+    ]
+  }
+]

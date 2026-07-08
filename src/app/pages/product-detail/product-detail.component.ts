@@ -1,6 +1,6 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, isPlatformBrowser } from '@angular/common';
 import { CatalogService } from '../../core/services/catalog.service';
 import { Product } from '../../core/models/product.model';
 import { QuoteConfiguratorService } from '../../core/services/quote-configurator.service';
@@ -17,19 +17,23 @@ export class ProductDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly catalogService = inject(CatalogService);
   private readonly quoteConfiguratorService = inject(QuoteConfiguratorService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   product = computed(() => {
-    const idStr = this.route.snapshot.paramMap.get('id');
-    const id = idStr ? Number(idStr) : NaN;
-    if (!Number.isFinite(id)) return undefined;
-    return this.catalogService.getById(id);
+    const code = this.route.snapshot.paramMap.get('code')?.trim() ?? '';
+
+    if (!code) {
+      return undefined;
+    }
+
+    return this.catalogService.getByCode(code);
   });
 
   constructor() {
-    const idStr = this.route.snapshot.paramMap.get('id');
-    const id = idStr ? Number(idStr) : NaN;
-    if (Number.isFinite(id)) {
-      this.catalogService.loadProductById(id);
+    const code = this.route.snapshot.paramMap.get('code')?.trim() ?? '';
+    if (this.isBrowser && code) {
+      void this.catalogService.loadProductByCode(code);
     }
   }
 

@@ -16,12 +16,6 @@
       <h1>{{ product.name }}</h1>
       <p>{{ product.description }}</p>
 
-      <div class="tags">
-        @for (tag of product.tags; track tag) {
-          <span>{{ tag }}</span>
-        }
-      </div>
-
       <div class="price-box">
         <span>Prezzo base</span>
         <strong>{{
@@ -67,7 +61,7 @@
                     >
                       <a
                         class="combo-item__image"
-                        [routerLink]="['/catalogo', related.id]"
+                        [routerLink]="['/catalogo', related.code]"
                       >
                         <img [src]="related.imageUrl" [alt]="related.name" />
                       </a>

@@ -1,5 +1,11 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  Component,
+  computed,
+  inject,
+  signal,
+  PLATFORM_ID,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProductCardComponent } from '../../components/product-card/product-card.component';
 import { CatalogService } from '../../core/services/catalog.service';
@@ -23,6 +29,8 @@ export class CatalogComponent {
   private readonly catalogService = inject(CatalogService);
   private readonly route = inject(ActivatedRoute);
   private readonly quoteConfiguratorService = inject(QuoteConfiguratorService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   readonly selectedProducts = this.quoteConfiguratorService.selectedProducts;
   readonly selectedTotal = this.quoteConfiguratorService.selectedTotal;
@@ -586,6 +594,10 @@ export class CatalogComponent {
         this.selectedCategory.set(categoryData?.label ?? 'Tutti');
       } else {
         this.selectedCategory.set('Tutti');
+      }
+
+      if (this.isBrowser) {
+        void this.catalogService.loadProducts(categorySlug);
       }
     });
   }

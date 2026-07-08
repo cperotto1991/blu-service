@@ -40,6 +40,93 @@
   }
 }
 
+.user-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.user-menu__trigger {
+  width: 2.625rem;
+  height: 2.625rem;
+  border-radius: 50%;
+  border: 0.0625rem solid rgba(173, 211, 250, 0.45);
+  background: rgba(9, 28, 48, 0.88);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.user-menu__dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7ed7c1, #57b7ff);
+  box-shadow: 0 0 0 0.2rem rgba(87, 183, 255, 0.14);
+}
+
+.user-menu__panel {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  min-width: 16rem;
+  padding: 0.85rem;
+  border-radius: 1rem;
+  background: rgba(8, 21, 36, 0.98);
+  border: 0.0625rem solid rgba(173, 211, 250, 0.22);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.32);
+  display: grid;
+  gap: 0.55rem;
+}
+
+.user-menu__info {
+  display: grid;
+  gap: 0.2rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 0.0625rem solid rgba(173, 211, 250, 0.14);
+
+  strong {
+    color: #f5fbff;
+    font-size: 0.78rem;
+    word-break: break-word;
+  }
+
+  span {
+    color: rgba(216, 236, 255, 0.72);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 700;
+  }
+}
+
+.user-menu__primary,
+.user-menu__item {
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  border-radius: 0.85rem;
+  border: 0.0625rem solid rgba(173, 211, 250, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f5fbff;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.user-menu__primary {
+  justify-content: center;
+  background: linear-gradient(135deg, #2c91e8, #5db8ff);
+}
+
+.user-menu__item--button {
+  width: 100%;
+  cursor: pointer;
+}
+
 .site-header__menu-row {
   min-height: 3.75rem;
   padding: 0 3vw;
@@ -192,6 +279,10 @@
     display: none;
   }
 
+  .user-menu {
+    margin-left: 0;
+  }
+
   .header-maps span {
     display: none;
   }
@@ -258,5 +349,10 @@
   .header-maps {
     min-height: 2rem;
     padding: 0 0.5rem;
+  }
+
+  .user-menu__panel {
+    min-width: 13.5rem;
+    right: -0.5rem;
   }
 }

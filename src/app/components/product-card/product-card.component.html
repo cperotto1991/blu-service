@@ -1,5 +1,5 @@
 <article class="product-card">
-  <a class="product-card__image" [routerLink]="['/catalogo', product.id]">
+  <a class="product-card__image" [routerLink]="['/catalogo', product.code]">
     <img [src]="product.imageUrl" [alt]="product.name" />
 
     @if (product.offerLabel) {
@@ -23,7 +23,7 @@
           Aggiungi
         </button>
 
-        <a class="btn-detail" [routerLink]="['/catalogo', product.id]">
+        <a class="btn-detail" [routerLink]="['/catalogo', product.code]">
           Dettaglio
         </a>
       </div>

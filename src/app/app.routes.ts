@@ -26,7 +26,7 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'catalogo/:id',
+        path: 'catalogo/:code',
         loadComponent: () =>
           import('./pages/product-detail/product-detail.component').then(
             (m) => m.ProductDetailComponent,
@@ -45,6 +45,21 @@ export const routes: Routes = [
           import('./pages/quote-request/quote-request.component').then(
             (m) => m.QuoteRequestComponent,
           ),
+      },
+      {
+        path: 'admin',
+        loadComponent: () =>
+          import('./pages/admin/admin.component').then((m) => m.AdminComponent),
+      },
+      {
+        path: 'admin/prodotto/nuovo',
+        loadComponent: () =>
+          import('./pages/admin/admin.component').then((m) => m.AdminComponent),
+      },
+      {
+        path: 'admin/prodotto/:code',
+        loadComponent: () =>
+          import('./pages/admin/admin.component').then((m) => m.AdminComponent),
       },
     ],
   },

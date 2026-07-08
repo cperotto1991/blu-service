@@ -1,13 +1,12 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { QuoteConfiguratorService } from '../../core/services/quote-configurator.service';
 import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-quote-request',
   standalone: true,
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe],
   templateUrl: './quote-request.component.html',
   styleUrl: './quote-request.component.scss',
 })

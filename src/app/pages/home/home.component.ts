@@ -121,7 +121,7 @@ export class HomeComponent {
       return;
     }
 
-    this.homeService.loadOffers();
+    void this.homeService.loadOffers();
 
     const heroIntervalId = window.setInterval(() => {
       if (this.heroSlides().length > 1 && !this.isHeroCarouselPaused()) {

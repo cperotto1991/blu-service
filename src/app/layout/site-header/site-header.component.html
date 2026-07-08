@@ -46,6 +46,57 @@
       <button type="submit" aria-label="Avvia ricerca">Cerca</button>
     </form>
 
+    <div class="user-menu" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="user-menu__trigger"
+        aria-label="Apri menu utente"
+        [attr.aria-expanded]="userMenuOpen()"
+        (click)="toggleUserMenu()"
+      >
+        <span class="user-menu__dot"></span>
+      </button>
+
+      @if (userMenuOpen()) {
+        <div class="user-menu__panel">
+          @if (!isLoggedIn()) {
+            <a
+              class="user-menu__primary"
+              routerLink="/admin"
+              (click)="closeUserMenu()"
+            >
+              Login
+            </a>
+          } @else {
+            <div class="user-menu__info">
+              <strong>{{ user()?.email }}</strong>
+              <span>{{
+                isAdmin() ? "Admin attivo" : "Utente autenticato"
+              }}</span>
+            </div>
+
+            @if (isAdmin()) {
+              <a
+                class="user-menu__item"
+                routerLink="/admin"
+                (click)="closeUserMenu()"
+              >
+                Gestione Catalogo
+              </a>
+            }
+
+            <button
+              type="button"
+              class="user-menu__item user-menu__item--button"
+              (click)="signOut()"
+            >
+              Logout
+            </button>
+          }
+        </div>
+      }
+    </div>
+
     <button
       type="button"
       class="menu-toggle"

@@ -13,9 +13,11 @@ export interface Product {
   shortDescription: string;
   description: string;
   basePrice: number;
+  finalPrice?: number;
   imageUrl: string;
   tags: string[];
   isOffer: boolean;
+  offerType?: 'promo' | 'flash' | 'stagionale';
   offerLabel?: string;
   discountPercent?: number;
   relatedProductCodes?: string[];
