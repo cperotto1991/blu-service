@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProductCardComponent } from '../../components/product-card/product-card.component';
+import { QuoteConfiguratorComponent } from '../../components/quote-configurator/quote-configurator.component';
 import { CatalogService } from '../../core/services/catalog.service';
 import { Product } from '../../core/models/product.model';
 import { QuoteConfiguratorService } from '../../core/services/quote-configurator.service';
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, ProductCardComponent, RouterLink],
+  imports: [CommonModule, ProductCardComponent, QuoteConfiguratorComponent],
   templateUrl: './catalog.component.html',
   styleUrl: './catalog.component.scss',
 })
@@ -610,6 +611,12 @@ export class CatalogComponent {
   }
 
   selectGroupOnly(groupId: string): void {
+    if (this.selectedGroup() === groupId) {
+      this.selectedGroup.set(null);
+      this.selectedSubFilter.set(null);
+      return;
+    }
+
     this.selectedGroup.set(groupId);
     this.selectedSubFilter.set(null);
   }

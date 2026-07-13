@@ -12,9 +12,7 @@
             <button
               type="button"
               class="group-title"
-              [class.active]="
-                selectedGroup() === group.id && !selectedSubFilter()
-              "
+              [class.active]="selectedGroup() === group.id"
               (click)="selectGroupOnly(group.id)"
             >
               {{ group.title }}
@@ -59,59 +57,7 @@
   </aside>
 
   <div class="catalog-main">
-    <div class="catalog-configurator">
-      <div class="configurator-head">
-        <div>
-          <span>Configuratore</span>
-          <h2>La tua selezione</h2>
-        </div>
-
-        <strong>{{ selectedProducts().length }} articoli</strong>
-      </div>
-
-      @if (selectedProducts().length > 0) {
-        <div class="configurator-items">
-          @for (item of selectedProducts(); track item.id) {
-            <div class="configurator-item">
-              <img [src]="item.imageUrl" [alt]="item.name" />
-
-              <div class="configurator-item__info">
-                <strong>{{ item.name }}</strong>
-                <span>
-                  {{ item.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                class="remove-item"
-                aria-label="Rimuovi prodotto"
-                (click)="removeProduct(item.id)"
-              >
-                ×
-              </button>
-            </div>
-          }
-        </div>
-
-        <div class="configurator-total">
-          <div>
-            <span>Totale configurazione</span>
-            <strong>
-              {{ selectedTotal() | currency: "EUR" : "symbol" : "1.0-0" }}
-            </strong>
-          </div>
-
-          <a routerLink="/richiesta-preventivo" class="view-configuration-btn">
-            Vedi configurazione
-          </a>
-        </div>
-      } @else {
-        <p class="configurator-empty">
-          Aggiungi prodotti dal catalogo per comporre la tua configurazione.
-        </p>
-      }
-    </div>
+    <app-quote-configurator></app-quote-configurator>
 
     <div class="catalog-grid">
       @for (product of products(); track product.id) {

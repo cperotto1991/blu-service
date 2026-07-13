@@ -11,6 +11,7 @@ import {
   limit,
   query,
   setDoc,
+  writeBatch,
   where,
 } from 'firebase/firestore';
 import {
@@ -231,6 +232,49 @@ export class FirebaseDataService {
     }
   }
 
+  async saveProductsBulk(
+    products: Product[],
+  ): Promise<{ written: number; skipped: number }> {
+    if (!hasFirebaseConfig() || !getFirebaseApp()) {
+      throw new Error(
+        'Firebase non configurato. Inserisci i dati in environment.ts',
+      );
+    }
+
+    const firestore = getFirestore(getFirebaseApp()!);
+    const normalizedProducts = products
+      .map((product) => this.normalizeProduct(product))
+      .map((product) => ({
+        id: product.code.trim().toUpperCase(),
+        payload: this.toPersistenceProduct(product),
+      }))
+      .filter((item) => item.id.length > 0);
+
+    const skipped = Math.max(0, products.length - normalizedProducts.length);
+
+    if (!normalizedProducts.length) {
+      return { written: 0, skipped };
+    }
+
+    const chunkSize = 400;
+    let written = 0;
+
+    for (let index = 0; index < normalizedProducts.length; index += chunkSize) {
+      const chunk = normalizedProducts.slice(index, index + chunkSize);
+      const batch = writeBatch(firestore);
+
+      for (const item of chunk) {
+        const docRef = doc(firestore, this.productsCollectionName, item.id);
+        batch.set(docRef, item.payload, { merge: false });
+      }
+
+      await batch.commit();
+      written += chunk.length;
+    }
+
+    return { written, skipped };
+  }
+
   private async uploadImage(
     storage: FirebaseStorage,
     product: Product,
@@ -373,15 +417,22 @@ export class FirebaseDataService {
   private toPersistenceProduct(product: Product): Record<string, unknown> {
     const payload: Record<string, unknown> = {
       id: product.id,
+      slug: product.slug,
+      code: product.code,
       name: product.name,
       category: product.category,
+      categorySlug: product.categorySlug,
+      groupId: product.groupId,
       subcategory: product.subcategory,
+      subcategorySlug: product.subcategorySlug,
       shortDescription: product.shortDescription,
       description: product.description,
       basePrice: product.basePrice,
       imageUrl: product.imageUrl,
+      tags: product.tags ?? [],
       isOffer: product.isOffer,
       relatedProductCodes: product.relatedProductCodes ?? [],
+      optionGroups: product.optionGroups ?? [],
     };
 
     if (typeof product.finalPrice === 'number') {

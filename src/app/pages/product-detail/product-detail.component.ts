@@ -1,6 +1,7 @@
 import { Component, computed, inject, PLATFORM_ID } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, isPlatformBrowser } from '@angular/common';
+import { QuoteConfiguratorComponent } from '../../components/quote-configurator/quote-configurator.component';
 import { CatalogService } from '../../core/services/catalog.service';
 import { Product } from '../../core/models/product.model';
 import { QuoteConfiguratorService } from '../../core/services/quote-configurator.service';
@@ -9,7 +10,7 @@ import { RelatedProductGroup } from '../../core/models/product-detail.models';
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, QuoteConfiguratorComponent],
   templateUrl: './product-detail.component.html',
   styleUrl: './product-detail.component.scss',
 })
@@ -71,6 +72,7 @@ export class ProductDetailComponent {
   });
 
   selectedProducts = this.quoteConfiguratorService.selectedProducts;
+  readonly selectedTotal = this.quoteConfiguratorService.selectedTotal;
 
   isSelected(productId: number): boolean {
     return this.selectedProducts().some((item) => item.id === productId);

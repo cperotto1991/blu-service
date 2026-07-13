@@ -8,7 +8,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:blu-service-shop": "node dist/blu-service-shop/server/server.mjs"
+    "serve:ssr:blu-service-shop": "node dist/blu-service-shop/server/server.mjs",
+    "products:generate": "node script/generate-products-json.mjs",
+    "products:import": "node script/import-products-to-firestore.mjs"
   },
   "private": true,
   "dependencies": {
@@ -25,6 +27,7 @@
     "@angular/ssr": "^19.2.17",
     "express": "^4.18.2",
     "firebase": "^12.15.0",
+    "firebase-admin": "^14.1.0",
     "lucide-angular": "^1.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

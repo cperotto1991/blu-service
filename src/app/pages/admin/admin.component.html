@@ -69,6 +69,40 @@
       </div>
     </div>
 
+    <section *ngIf="!isEditorPage()" class="admin-bulk-import">
+      <h2>Import massivo prodotti</h2>
+      <p>
+        Seleziona un JSON (array prodotti o file seed con campo documents) e
+        caricalo in Firestore in un'unica operazione batch.
+      </p>
+
+      <div class="bulk-import-grid">
+        <label>
+          File JSON prodotti
+          <input
+            type="file"
+            accept=".json,application/json"
+            (change)="onBulkProductsFileSelected($event)"
+          />
+          <span class="helper">{{ bulkFileName() }}</span>
+        </label>
+
+        <div class="bulk-actions">
+          <p class="helper" *ngIf="bulkProductsToImport().length > 0">
+            {{ bulkProductsToImport().length }} prodotti pronti all'import.
+          </p>
+
+          <button
+            type="button"
+            [disabled]="isSaving() || bulkProductsToImport().length === 0"
+            (click)="importProductsFromJson()"
+          >
+            Importa prodotti JSON
+          </button>
+        </div>
+      </div>
+    </section>
+
     <form
       *ngIf="isEditorPage() && showProductForm()"
       class="admin-form"
@@ -316,7 +350,7 @@
                 trackBy: trackByProductId
               "
             >
-              <td>
+              <td data-label="Selezione">
                 <input
                   type="checkbox"
                   [checked]="isSelected(product.code)"
@@ -328,21 +362,26 @@
                   "
                 />
               </td>
-              <td>{{ product.code }}</td>
-              <td>{{ product.name }}</td>
-              <td>{{ product.category }}</td>
-              <td>{{ product.subcategory }}</td>
-              <td>{{ formatPrice(product.basePrice) }}</td>
-              <td>
-                <span
+              <td data-label="Codice">{{ product.code }}</td>
+              <td data-label="Nome">{{ product.name }}</td>
+              <td data-label="Categoria">{{ product.category }}</td>
+              <td data-label="Sottocategoria">{{ product.subcategory }}</td>
+              <td data-label="Prezzo base">
+                {{ formatPrice(product.basePrice) }}
+              </td>
+              <td data-label="Promo">
+                <button
+                  type="button"
                   class="promo-pill"
                   [class.promo-pill--on]="product.isOffer"
                   [class.promo-pill--off]="!product.isOffer"
+                  [disabled]="isSaving()"
+                  (click)="togglePromoForProduct(product)"
                 >
                   {{ product.isOffer ? "Attiva" : "Disattiva" }}
-                </span>
+                </button>
               </td>
-              <td>
+              <td data-label="Azioni">
                 <div class="item-actions">
                   <button
                     type="button"
@@ -358,14 +397,6 @@
                     (click)="deleteProduct(product)"
                   >
                     Elimina
-                  </button>
-                  <button
-                    type="button"
-                    class="small ghost"
-                    [disabled]="isSaving()"
-                    (click)="togglePromoForProduct(product)"
-                  >
-                    {{ product.isOffer ? "Disattiva promo" : "Attiva promo" }}
                   </button>
                 </div>
               </td>

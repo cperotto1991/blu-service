@@ -326,7 +326,52 @@ const peopleRanges = [
   "14/16 persone",
 ];
 
-const totalProductsTarget = 200;
+const parsePositiveInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const argCount = process.argv.find((arg) => arg.startsWith("--count="));
+const totalProductsTarget = parsePositiveInt(
+  argCount?.split("=")[1],
+  Number.parseInt(process.env.PRODUCTS_COUNT ?? "", 10) || 100,
+);
+const startProductId = 1001;
+
+const namePrefixesByCategory = {
+  depuratori: [
+    "Shurity Utah",
+    "Shurity Nova Smart",
+    "Shurity Kansas",
+    "Shurity Pure Flow",
+  ],
+  addolcitori: [
+    "Shurity Cube",
+    "Shurity Soft",
+    "Shurity Shield Smart",
+    "Shurity Aqua Guard",
+  ],
+  miscelatori: [
+    "Shurity Milano",
+    "Shurity Verona",
+    "Shurity 424",
+    "Shurity Urban",
+  ],
+  sanificazione: [
+    "Shurity Wash",
+    "Shurity UV Safe",
+    "Shurity Cloro Control",
+    "Shurity Hygienic Plus",
+  ],
+  accessori: [
+    "Shurity Lab",
+    "Shurity Fluid Fit",
+    "Shurity Bottle",
+    "Shurity Tech Tool",
+  ],
+};
+
+const offerTypes = ["promo", "flash", "stagionale"];
 
 const staticImageUrl =
   "https://www.shurity.it/wp-content/uploads/2025/09/331830_AB-768x767.jpg";
@@ -421,8 +466,11 @@ const flattenedSubcategories = catalogTree.flatMap((category) =>
 const createProduct = (entry, id, variantSeed = 0) => {
   const { category, group, subcategory } = entry;
   const capacity = peopleRanges[(id + variantSeed) % peopleRanges.length];
-  const variantSuffix = variantSeed === 0 ? "" : ` ${toTitleCase(subcategory.slug)}`;
-  const model = `${subcategory.label}${variantSuffix}`;
+  const familyNames = namePrefixesByCategory[category.slug] ?? ["Shurity"];
+  const family = familyNames[(id + variantSeed) % familyNames.length];
+  const variantSuffix =
+    variantSeed === 0 ? "" : ` ${toTitleCase(subcategory.slug)}`;
+  const model = `${family} ${subcategory.label}${variantSuffix}`;
 
   const basePrice = category.base + ((id + variantSeed) % 12) * 55;
   const isOffer = id % 7 === 0 || id % 11 === 0;
@@ -451,6 +499,7 @@ const createProduct = (entry, id, variantSeed = 0) => {
       id % 3 === 0 ? "Uso domestico" : "Uso professionale",
     ],
     isOffer,
+    offerType: isOffer ? offerTypes[id % offerTypes.length] : undefined,
     offerLabel:
       id % 7 === 0 ? "Promo mese" : id % 11 === 0 ? "Best deal" : undefined,
     discountPercent,
@@ -460,13 +509,13 @@ const createProduct = (entry, id, variantSeed = 0) => {
 
 // Seed list: at least one product for each subcategory.
 const seededProducts = flattenedSubcategories.map((entry, index) =>
-  createProduct(entry, index + 1),
+  createProduct(entry, startProductId + index),
 );
 
 const extraCount = Math.max(0, totalProductsTarget - seededProducts.length);
 
 const extraProducts = Array.from({ length: extraCount }, (_, index) => {
-  const id = seededProducts.length + index + 1;
+  const id = startProductId + seededProducts.length + index;
   const entry = flattenedSubcategories[index % flattenedSubcategories.length];
   return createProduct(entry, id, (index % 3) + 1);
 });
@@ -492,8 +541,19 @@ const products = baseProducts.map((product) => {
   };
 });
 
+const firebaseSeed = {
+  generatedAt: new Date().toISOString(),
+  collection: "products",
+  count: products.length,
+  documents: products.map((product) => ({
+    id: product.code,
+    data: product,
+  })),
+};
+
 fs.mkdirSync("public/assets/data", { recursive: true });
 fs.mkdirSync("src/assets/data", { recursive: true });
+fs.mkdirSync("script", { recursive: true });
 fs.writeFileSync(
   "public/assets/data/products.json",
   JSON.stringify(products, null, 2),
@@ -502,7 +562,14 @@ fs.writeFileSync(
   "src/assets/data/products.json",
   JSON.stringify(products, null, 2),
 );
+fs.writeFileSync(
+  "script/firebase-seed-products.json",
+  JSON.stringify(firebaseSeed, null, 2),
+);
 
 console.log(
   `products.json generato con ${products.length} prodotti e ${flattenedSubcategories.length} sottocategorie coperte`,
+);
+console.log(
+  `firebase-seed-products.json aggiornato con ${firebaseSeed.count} documenti per la collection ${firebaseSeed.collection}`,
 );

@@ -119,6 +119,8 @@ export class AdminComponent {
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
   readonly selectedFileName = signal('Nessun file selezionato');
+  readonly bulkFileName = signal('Nessun file selezionato');
+  readonly bulkProductsToImport = signal<Product[]>([]);
   readonly showLinkProductsModal = signal(false);
   readonly linkingCategorySlug = signal('');
   readonly linkingSubcategorySlug = signal('');
@@ -269,6 +271,74 @@ export class AdminComponent {
     const file = input?.files?.[0] ?? null;
     this.selectedImageFile = file;
     this.selectedFileName.set(file?.name ?? 'Nessun file selezionato');
+  }
+
+  async onBulkProductsFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0] ?? null;
+
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+
+    if (!file) {
+      this.bulkFileName.set('Nessun file selezionato');
+      this.bulkProductsToImport.set([]);
+      return;
+    }
+
+    this.bulkFileName.set(file.name);
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text) as unknown;
+      const importedProducts = this.extractProductsFromImportPayload(parsed)
+        .map((item) => this.toImportableProduct(item))
+        .filter((item): item is Product => item !== null);
+
+      if (!importedProducts.length) {
+        this.bulkProductsToImport.set([]);
+        this.errorMessage.set(
+          'Il file non contiene prodotti validi da importare.',
+        );
+        return;
+      }
+
+      this.bulkProductsToImport.set(importedProducts);
+      this.statusMessage.set(
+        `File pronto: ${importedProducts.length} prodotti da importare.`,
+      );
+    } catch {
+      this.bulkProductsToImport.set([]);
+      this.errorMessage.set('JSON non valido. Verifica il file selezionato.');
+    }
+  }
+
+  async importProductsFromJson(): Promise<void> {
+    const products = this.bulkProductsToImport();
+
+    if (!products.length) {
+      this.errorMessage.set('Seleziona prima un file JSON valido.');
+      return;
+    }
+
+    this.errorMessage.set('');
+    this.statusMessage.set('Import massivo in corso...');
+    this.isSaving.set(true);
+
+    try {
+      const result = await this.dataService.saveProductsBulk(products);
+      await this.catalogService.loadProducts();
+
+      this.statusMessage.set(
+        `Import completato: ${result.written} prodotti salvati${result.skipped > 0 ? `, ${result.skipped} ignorati` : ''}.`,
+      );
+      this.bulkProductsToImport.set([]);
+      this.bulkFileName.set('Nessun file selezionato');
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isSaving.set(false);
+    }
   }
 
   async saveProduct(): Promise<void> {
@@ -826,6 +896,112 @@ export class AdminComponent {
       .split(',')
       .map((item) => item.trim().toUpperCase())
       .filter(Boolean);
+  }
+
+  private extractProductsFromImportPayload(payload: unknown): unknown[] {
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      Array.isArray((payload as { documents?: unknown[] }).documents)
+    ) {
+      return (payload as { documents: unknown[] }).documents.map((entry) => {
+        if (entry && typeof entry === 'object' && 'data' in entry) {
+          return (entry as { data?: unknown }).data;
+        }
+
+        return entry;
+      });
+    }
+
+    return [];
+  }
+
+  private toImportableProduct(raw: unknown): Product | null {
+    if (!raw || typeof raw !== 'object') {
+      return null;
+    }
+
+    const value = raw as Partial<Product>;
+    const code = String(value.code ?? value.id ?? '')
+      .trim()
+      .toUpperCase();
+
+    if (!code) {
+      return null;
+    }
+
+    const categorySlug = this.normalizeSlug(
+      String(value.categorySlug ?? value.category ?? ''),
+    );
+    const subcategorySlug = this.normalizeSlug(
+      String(value.subcategorySlug ?? value.subcategory ?? ''),
+    );
+
+    const normalizedBasePrice = this.normalizeMoney(
+      Number(value.basePrice ?? 0),
+    );
+    const normalizedDiscount =
+      typeof value.discountPercent === 'number'
+        ? this.clampDiscount(value.discountPercent)
+        : undefined;
+
+    const offerType =
+      value.offerType === 'promo' ||
+      value.offerType === 'flash' ||
+      value.offerType === 'stagionale'
+        ? value.offerType
+        : undefined;
+
+    return {
+      id:
+        typeof value.id === 'number' && Number.isFinite(value.id)
+          ? value.id
+          : this.createNumericIdFromCode(code),
+      slug: String(value.slug ?? ''),
+      code,
+      name: String(value.name ?? code),
+      category: String(value.category ?? categorySlug),
+      categorySlug,
+      groupId: String(value.groupId ?? ''),
+      subcategory: String(value.subcategory ?? subcategorySlug),
+      subcategorySlug,
+      shortDescription: String(value.shortDescription ?? ''),
+      description: String(value.description ?? ''),
+      basePrice: normalizedBasePrice,
+      finalPrice:
+        typeof value.finalPrice === 'number'
+          ? this.normalizeMoney(value.finalPrice)
+          : undefined,
+      imageUrl: String(value.imageUrl ?? ''),
+      tags: Array.isArray(value.tags) ? value.tags.map(String) : [],
+      isOffer: Boolean(value.isOffer),
+      offerType,
+      offerLabel:
+        typeof value.offerLabel === 'string'
+          ? value.offerLabel
+          : offerType
+            ? this.getOfferTypeLabel(offerType)
+            : undefined,
+      discountPercent: normalizedDiscount,
+      relatedProductCodes: Array.isArray(value.relatedProductCodes)
+        ? value.relatedProductCodes.map((item) => String(item).toUpperCase())
+        : [],
+      optionGroups: Array.isArray(value.optionGroups) ? value.optionGroups : [],
+    };
+  }
+
+  private normalizeSlug(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
   }
 
   private getErrorMessage(error: unknown): string {
