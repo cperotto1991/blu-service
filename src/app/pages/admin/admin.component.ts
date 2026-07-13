@@ -1,9 +1,12 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import {
   Component,
+  ElementRef,
+  HostListener,
   PLATFORM_ID,
   computed,
   inject,
+  ViewChild,
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -128,6 +131,8 @@ export class AdminComponent {
   readonly linkingSelectedCodes = signal<string[]>([]);
   readonly isLinkingSearchLoading = signal(false);
   readonly linkingErrorMessage = signal('');
+  readonly showScrollTopButton = signal(false);
+  readonly showScrollBottomButton = signal(false);
   readonly categoryOptions: AdminCategoryOption[] = [
     {
       slug: 'depuratori',
@@ -208,10 +213,19 @@ export class AdminComponent {
 
   private selectedImageFile: File | null = null;
   private currentImageUrl = '';
+  private readonly scrollVisibilityThreshold = 160;
+
+  @ViewChild('catalogPreview')
+  private catalogPreviewRef?: ElementRef<HTMLElement>;
+
+  @ViewChild('productsTableWrap')
+  private productsTableWrapRef?: ElementRef<HTMLElement>;
 
   constructor() {
     if (this.isBrowser) {
-      void this.catalogService.loadProducts();
+      void this.catalogService.loadProducts().then(() => {
+        this.updateScrollButtonState();
+      });
     }
 
     this.resetProductForm();
@@ -224,6 +238,16 @@ export class AdminComponent {
     this.route.paramMap.subscribe(() => {
       void this.syncPageModeFromRoute();
     });
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    this.updateScrollButtonState();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.updateScrollButtonState();
   }
 
   async signIn(): Promise<void> {
@@ -251,6 +275,28 @@ export class AdminComponent {
     this.editingProductCode.set(null);
     this.selectedProductCodes.set([]);
     this.statusMessage.set('Sei uscito dalla sessione.');
+  }
+
+  scrollToTop(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.catalogPreviewRef?.nativeElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+
+  scrollToBottom(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    this.productsTableWrapRef?.nativeElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+    });
   }
 
   onTableCategoryFilterChange(categorySlug: string): void {
@@ -1212,6 +1258,27 @@ export class AdminComponent {
     this.resetProductForm();
     this.showProductForm.set(true);
     this.isEditorPage.set(true);
+  }
+
+  private updateScrollButtonState(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+    const viewportHeight = window.innerHeight;
+    const scrollHeight = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+    );
+    const canScroll = scrollHeight > viewportHeight + 40;
+
+    this.showScrollTopButton.set(scrollTop > this.scrollVisibilityThreshold);
+    this.showScrollBottomButton.set(
+      canScroll &&
+        scrollTop + viewportHeight <
+          scrollHeight - this.scrollVisibilityThreshold,
+    );
   }
 
   private async syncPageModeFromRoute(): Promise<void> {
