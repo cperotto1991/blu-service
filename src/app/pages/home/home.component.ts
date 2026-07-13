@@ -82,21 +82,22 @@ export class HomeComponent {
       .offers()
       .slice(0, 5)
       .map((offer) => this.toHeroSlide(offer));
+    const fallbackSlide: HeroSlide = {
+      id: 0,
+      code: '',
+      title: 'BLU Service',
+      shortDescription: 'Scopri le offerte disponibili nel catalogo.',
+      imageUrl: this.heroImage(),
+      discountPercent: 10,
+      discountedPrice: 490,
+      basePrice: 550,
+      savings: 60,
+    };
 
-    return slides.length
-      ? slides
-      : [
-          {
-            id: 0,
-            title: 'BLU Service',
-            shortDescription: 'Scopri le offerte disponibili nel catalogo.',
-            imageUrl: this.heroImage(),
-            discountPercent: 10,
-            discountedPrice: 490,
-            basePrice: 550,
-            savings: 60,
-          },
-        ];
+    const heroSlides: HeroSlide[] =
+      slides.length > 0 ? slides : [fallbackSlide];
+
+    return heroSlides;
   });
 
   readonly activeHeroSlideIndex = computed(() => {
@@ -190,6 +191,7 @@ export class HomeComponent {
 
     return {
       id: product.id,
+      code: product.code,
       name: product.name,
       shortDescription: product.shortDescription,
       imageUrl: product.imageUrl,
@@ -205,6 +207,7 @@ export class HomeComponent {
 
     return {
       id: offer.id,
+      code: offer.code,
       title: offer.name,
       shortDescription: offer.shortDescription,
       imageUrl: offer.imageUrl,

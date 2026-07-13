@@ -8,6 +8,7 @@ export interface HomeCategoryCard {
 
 export interface HomeOfferCard {
   id: number;
+  code?: string;
   name: string;
   shortDescription: string;
   imageUrl: string;
@@ -19,6 +20,7 @@ export interface HomeOfferCard {
 
 export interface HeroSlide {
   id: number;
+  code?: string;
   title: string;
   shortDescription: string;
   imageUrl: string;

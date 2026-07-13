@@ -47,15 +47,24 @@
 }
 
 .user-menu__trigger {
-  width: 2.625rem;
-  height: 2.625rem;
-  border-radius: 50%;
+  min-height: 2.625rem;
+  padding: 0 0.875rem;
+  border-radius: 62.4375rem;
   border: 0.0625rem solid rgba(173, 211, 250, 0.45);
   background: rgba(9, 28, 48, 0.88);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.45rem;
   cursor: pointer;
+}
+
+.user-menu__label {
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .user-menu__dot {
@@ -275,12 +284,39 @@
 }
 
 @media (max-width: 67.5rem) {
+  .site-header__top {
+    justify-content: space-between;
+  }
+
   .header-search {
     display: none;
   }
 
-  .user-menu {
+  .top-links {
+    order: 1;
+    flex: 1 1 auto;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    order: 2;
     margin-left: 0;
+    margin-right: 0;
+    align-items: center;
+  }
+
+  .header-maps {
+    order: 3;
+    margin-left: auto;
+  }
+
+  .user-menu {
+    order: 4;
+    margin-left: auto;
+  }
+
+  .user-menu__trigger {
+    min-height: 2.375rem;
   }
 
   .header-maps span {
@@ -296,12 +332,6 @@
 
   .desktop-nav {
     display: none;
-  }
-
-  .menu-toggle {
-    display: inline-flex;
-    margin-left: auto;
-    align-items: center;
   }
 
   .mobile-nav {
@@ -330,6 +360,7 @@
   .site-header__top {
     min-height: 3.25rem;
     padding: 0.5rem 4vw;
+    gap: 0.55rem;
   }
 
   .top-links {
@@ -349,6 +380,16 @@
   .header-maps {
     min-height: 2rem;
     padding: 0 0.5rem;
+  }
+
+  .user-menu__label {
+    font-size: 0.64rem;
+  }
+
+  .menu-toggle {
+    min-height: 2rem;
+    padding: 0 0.7rem;
+    font-size: 0.64rem;
   }
 
   .user-menu__panel {

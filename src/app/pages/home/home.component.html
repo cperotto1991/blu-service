@@ -51,7 +51,7 @@
             @if (activeHeroSlideData().id !== 0) {
               <a
                 class="hero-carousel__buy"
-                [routerLink]="['/catalogo', activeHeroSlideData().id]"
+                [routerLink]="['/catalogo', activeHeroSlideData().code]"
               >
                 Acquista ora
               </a>
@@ -102,7 +102,7 @@
 
     <div class="offers-grid">
       @for (offer of offers(); track offer.id) {
-        <a class="offer-card" [routerLink]="['/catalogo', offer.id]">
+        <a class="offer-card" [routerLink]="['/catalogo', offer.code]">
           <span class="offer-card__discount"
             >-{{ offer.discountPercent }}%</span
           >

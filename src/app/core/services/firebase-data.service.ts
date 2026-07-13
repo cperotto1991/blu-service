@@ -297,9 +297,11 @@ export class FirebaseDataService {
   }
 
   private mapProduct(data: Partial<Product>, fallbackId: string): Product {
-    const normalizedCode = String(data.code ?? fallbackId ?? '')
-      .trim()
-      .toUpperCase();
+    const normalizedCode = this.normalizeProductCode(
+      String(data.code ?? fallbackId ?? ''),
+      fallbackId,
+      data.id,
+    );
 
     return this.normalizeProduct({
       ...data,
@@ -347,9 +349,11 @@ export class FirebaseDataService {
   }
 
   private normalizeProduct(product: Partial<Product>): Product {
-    const normalizedCode = String(product.code ?? '')
-      .trim()
-      .toUpperCase();
+    const normalizedCode = this.normalizeProductCode(
+      String(product.code ?? ''),
+      String(product.id ?? ''),
+      product.id,
+    );
 
     return {
       id:
@@ -477,6 +481,30 @@ export class FirebaseDataService {
     }
 
     return Math.abs(hash);
+  }
+
+  private normalizeProductCode(
+    rawCode: string,
+    fallbackCode: string,
+    fallbackId?: number,
+  ): string {
+    const cleanedCode = String(rawCode ?? '')
+      .trim()
+      .toUpperCase();
+
+    if (!cleanedCode) {
+      return String(fallbackCode ?? '')
+        .trim()
+        .toUpperCase();
+    }
+
+    if (/^\d+$/.test(cleanedCode)) {
+      const numericSuffix =
+        cleanedCode || String(fallbackId ?? fallbackCode ?? '');
+      return `H2O-${numericSuffix}`;
+    }
+
+    return cleanedCode;
   }
 
   private normalizeOptionGroup(

@@ -15,14 +15,24 @@
         href="https://wa.me/393331234567?text=Ciao%2C%20ho%20bisogno%20di%20assistenza"
         target="_blank"
         rel="noopener noreferrer"
+        >Assistenza</a
       >
-        Assistenza
-      </a>
       <span aria-hidden="true">|</span>
       <a href="mailto:info@bluservice.eu?subject=Lavora%20Con%20Noi"
         >Lavora Con Noi</a
       >
     </div>
+
+    <button
+      type="button"
+      class="menu-toggle"
+      aria-label="Apri menu"
+      [attr.aria-expanded]="mobileMenuOpen()"
+      (click)="toggleMobileMenu()"
+    >
+      Menu
+    </button>
+
     <a
       class="header-maps"
       href="https://www.google.com/maps/search/?api=1&query=Via+Copernico+18%2C+00071+Pomezia+RM"
@@ -54,7 +64,11 @@
         [attr.aria-expanded]="userMenuOpen()"
         (click)="toggleUserMenu()"
       >
-        <span class="user-menu__dot"></span>
+        @if (isLoggedIn()) {
+          <span class="user-menu__dot"></span>
+        } @else {
+          <span class="user-menu__label">Login</span>
+        }
       </button>
 
       @if (userMenuOpen()) {
@@ -96,16 +110,6 @@
         </div>
       }
     </div>
-
-    <button
-      type="button"
-      class="menu-toggle"
-      aria-label="Apri menu"
-      [attr.aria-expanded]="mobileMenuOpen()"
-      (click)="toggleMobileMenu()"
-    >
-      Menu
-    </button>
   </div>
 
   <div class="site-header__menu-row">
