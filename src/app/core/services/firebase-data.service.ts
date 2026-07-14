@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { MenuCategory } from '../models/menu-category.model';
 import { Product } from '../models/product.model';
 import { ProductOptionGroup } from '../models/catalog.models';
 import {
@@ -28,6 +29,7 @@ import { getFirebaseApp, hasFirebaseConfig } from '../firebase/firebase.config';
 })
 export class FirebaseDataService {
   private readonly productsCollectionName = 'products';
+  private readonly categoriesCollectionName = 'categories';
 
   async listProducts(categorySlug?: string | null): Promise<Product[]> {
     if (!hasFirebaseConfig() || !getFirebaseApp()) {
@@ -58,6 +60,66 @@ export class FirebaseDataService {
 
     return snapshot.docs.map((item) =>
       this.mapProduct(item.data() as Partial<Product>, item.id),
+    );
+  }
+
+  async listCategories(): Promise<MenuCategory[]> {
+    if (!hasFirebaseConfig() || !getFirebaseApp()) {
+      return [];
+    }
+
+    const firestore = getFirestore(getFirebaseApp()!);
+    const categoriesRef = collection(firestore, this.categoriesCollectionName);
+    const snapshot = await getDocs(categoriesRef);
+
+    return snapshot.docs
+      .map((item) =>
+        this.mapCategory(item.data() as Partial<MenuCategory>, item.id),
+      )
+      .sort(
+        (a, b) => a.order - b.order || a.label.localeCompare(b.label, 'it'),
+      );
+  }
+
+  async saveCategory(category: MenuCategory): Promise<MenuCategory> {
+    if (!hasFirebaseConfig() || !getFirebaseApp()) {
+      throw new Error(
+        'Firebase non configurato. Inserisci i dati in environment.ts',
+      );
+    }
+
+    const normalized = this.normalizeCategory(category);
+
+    if (!normalized.slug) {
+      throw new Error('Lo slug categoria è obbligatorio.');
+    }
+
+    const firestore = getFirestore(getFirebaseApp()!);
+    await setDoc(
+      doc(firestore, this.categoriesCollectionName, normalized.slug),
+      normalized,
+      { merge: false },
+    );
+
+    return normalized;
+  }
+
+  async deleteCategory(categorySlug: string): Promise<void> {
+    if (!hasFirebaseConfig() || !getFirebaseApp()) {
+      throw new Error(
+        'Firebase non configurato. Inserisci i dati in environment.ts',
+      );
+    }
+
+    const normalizedSlug = this.normalizeSlug(categorySlug);
+
+    if (!normalizedSlug) {
+      throw new Error('Slug categoria non valido.');
+    }
+
+    const firestore = getFirestore(getFirebaseApp()!);
+    await deleteDoc(
+      doc(firestore, this.categoriesCollectionName, normalizedSlug),
     );
   }
 
@@ -294,6 +356,173 @@ export class FirebaseDataService {
 
     await uploadBytes(storageRef, file);
     return getDownloadURL(storageRef);
+  }
+
+  private mapCategory(
+    data: Partial<MenuCategory>,
+    fallbackId: string,
+  ): MenuCategory {
+    const slug = this.normalizeSlug(String(data.slug ?? fallbackId ?? ''));
+    const label = String(data.label ?? slug);
+    const sourceGroups = Array.isArray(data.groups)
+      ? data.groups
+      : this.createLegacyGroupFromSubcategories(
+          data as {
+            subcategories?: Array<{
+              slug?: string;
+              label?: string;
+              enabled?: boolean;
+            }>;
+          },
+        );
+
+    const groups = sourceGroups
+      .map((group) => {
+        const groupSlug = this.normalizeSlug(
+          String(group?.slug ?? group?.label ?? ''),
+        );
+        const groupLabel = String(group?.label ?? group?.slug ?? '');
+        const subcategories = Array.isArray(group?.subcategories)
+          ? group.subcategories
+              .map((item) => ({
+                slug: this.normalizeSlug(
+                  String(item?.slug ?? item?.label ?? ''),
+                ),
+                label: String(item?.label ?? item?.slug ?? ''),
+                enabled: item?.enabled !== false,
+              }))
+              .filter((item) => item.slug && item.label)
+          : [];
+
+        return {
+          slug: groupSlug,
+          label: groupLabel,
+          enabled: group?.enabled !== false,
+          subcategories,
+        };
+      })
+      .filter((group) => group.slug && group.label);
+
+    return {
+      slug,
+      label,
+      order:
+        typeof data.order === 'number' && Number.isFinite(data.order)
+          ? Math.round(data.order)
+          : 0,
+      enabled: data.enabled !== false,
+      groups,
+    };
+  }
+
+  private normalizeCategory(category: MenuCategory): MenuCategory {
+    const slug = this.normalizeSlug(category.slug);
+    const label = category.label.trim() || slug;
+    const uniqueGroups = new Map<
+      string,
+      {
+        label: string;
+        enabled: boolean;
+        subcategories: Map<string, { label: string; enabled: boolean }>;
+      }
+    >();
+
+    for (const group of category.groups ?? []) {
+      const groupSlug = this.normalizeSlug(
+        String(group.slug ?? group.label ?? ''),
+      );
+      const groupLabel = String(group.label ?? group.slug ?? '').trim();
+      const groupEnabled = group.enabled !== false;
+
+      if (!groupSlug || !groupLabel) {
+        continue;
+      }
+
+      if (!uniqueGroups.has(groupSlug)) {
+        uniqueGroups.set(groupSlug, {
+          label: groupLabel,
+          enabled: groupEnabled,
+          subcategories: new Map<string, { label: string; enabled: boolean }>(),
+        });
+      }
+
+      const targetGroup = uniqueGroups.get(groupSlug);
+
+      for (const subcategory of group.subcategories ?? []) {
+        const subSlug = this.normalizeSlug(
+          String(subcategory.slug ?? subcategory.label ?? ''),
+        );
+        const subLabel = String(
+          subcategory.label ?? subcategory.slug ?? '',
+        ).trim();
+        const subEnabled = subcategory.enabled !== false;
+
+        if (!subSlug || !subLabel || !targetGroup) {
+          continue;
+        }
+
+        if (!targetGroup.subcategories.has(subSlug)) {
+          targetGroup.subcategories.set(subSlug, {
+            label: subLabel,
+            enabled: subEnabled,
+          });
+        }
+      }
+    }
+
+    return {
+      slug,
+      label,
+      order:
+        typeof category.order === 'number' && Number.isFinite(category.order)
+          ? Math.round(category.order)
+          : 0,
+      enabled: category.enabled !== false,
+      groups: Array.from(uniqueGroups.entries()).map(([groupSlug, group]) => ({
+        slug: groupSlug,
+        label: group.label,
+        enabled: group.enabled,
+        subcategories: Array.from(group.subcategories.entries()).map(
+          ([subSlug, subcategory]) => ({
+            slug: subSlug,
+            label: subcategory.label,
+            enabled: subcategory.enabled,
+          }),
+        ),
+      })),
+    };
+  }
+
+  private createLegacyGroupFromSubcategories(data: {
+    subcategories?: Array<{ slug?: string; label?: string; enabled?: boolean }>;
+  }): Array<{
+    slug: string;
+    label: string;
+    enabled: boolean;
+    subcategories: Array<{ slug?: string; label?: string; enabled?: boolean }>;
+  }> {
+    if (!Array.isArray(data.subcategories) || data.subcategories.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        slug: 'generale',
+        label: 'Generale',
+        enabled: true,
+        subcategories: data.subcategories,
+      },
+    ];
+  }
+
+  private normalizeSlug(value: string): string {
+    return value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
   }
 
   private mapProduct(data: Partial<Product>, fallbackId: string): Product {

@@ -12,6 +12,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogService } from '../../core/services/catalog.service';
+import { CategoryMenuService } from '../../core/services/category-menu.service';
 import { FirebaseAuthService } from '../../core/services/firebase-auth.service';
 import { FirebaseDataService } from '../../core/services/firebase-data.service';
 import { Product } from '../../core/models/product.model';
@@ -42,6 +43,7 @@ export class AdminComponent {
   private readonly authService = inject(FirebaseAuthService);
   private readonly dataService = inject(FirebaseDataService);
   private readonly catalogService = inject(CatalogService);
+  private readonly categoryMenuService = inject(CategoryMenuService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly platformId = inject(PLATFORM_ID);
@@ -60,7 +62,9 @@ export class AdminComponent {
     const categorySlug = this.categoryFilter().trim();
 
     if (!categorySlug) {
-      return this.categoryOptions.flatMap((category) => category.subcategories);
+      return this.categoryOptions().flatMap(
+        (category) => category.subcategories,
+      );
     }
 
     return this.findCategoryOption(categorySlug)?.subcategories ?? [];
@@ -133,63 +137,18 @@ export class AdminComponent {
   readonly linkingErrorMessage = signal('');
   readonly showScrollTopButton = signal(false);
   readonly showScrollBottomButton = signal(false);
-  readonly categoryOptions: AdminCategoryOption[] = [
-    {
-      slug: 'depuratori',
-      label: 'Depuratori',
-      subcategories: [
-        { slug: 'uso-domestico', label: 'Uso domestico' },
-        { slug: 'bar-ristoranti', label: 'Bar e Ristoranti' },
-        { slug: 'hotel', label: 'Hotel' },
-        {
-          slug: 'uffici-locali-pubblici',
-          label: 'Uffici e locali pubblici',
-        },
-      ],
-    },
-    {
-      slug: 'addolcitori',
-      label: 'Addolcitori',
-      subcategories: [
-        { slug: 'cabinati', label: 'Cabinati' },
-        { slug: 'doppio-corpo', label: 'Doppio corpo' },
-        {
-          slug: 'decalcificatori-elettronici',
-          label: 'Decalcificatori elettronici',
-        },
-      ],
-    },
-    {
-      slug: 'sanificazione',
-      label: 'Sanificazione',
-      subcategories: [
-        {
-          slug: 'ozonizzatori-acqua',
-          label: 'Ozonizzatori acqua completi',
-        },
-        { slug: 'accessori-ozonizzatori', label: 'Accessori ozonizzatori' },
-        { slug: 'sistemi-uv', label: 'Sistemi UV acqua completi' },
-      ],
-    },
-    {
-      slug: 'miscelatori',
-      label: 'Miscelatori',
-      subcategories: [
-        { slug: 'rubinetti-3-vie', label: 'Rubinetti 3 vie' },
-        { slug: 'rubinetti-4-vie', label: 'Rubinetti 4 vie' },
-        { slug: 'rubinetti-5-vie', label: 'Rubinetti 5 vie' },
-      ],
-    },
-    {
-      slug: 'accessori',
-      label: 'Accessori',
-      subcategories: [
-        { slug: 'pattumiere', label: 'Pattumiere' },
-        { slug: 'tritarifiuti', label: 'Tritarifiuti' },
-        { slug: 'borracce-termiche', label: 'Borracce termiche' },
-      ],
-    },
-  ];
+  readonly categoryOptions = computed<AdminCategoryOption[]>(() =>
+    this.categoryMenuService.categories().map((category) => ({
+      slug: category.slug,
+      label: category.label,
+      subcategories: category.groups.flatMap((group) =>
+        group.subcategories.map((subcategory) => ({
+          slug: subcategory.slug,
+          label: subcategory.label,
+        })),
+      ),
+    })),
+  );
 
   readonly loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -226,6 +185,7 @@ export class AdminComponent {
       void this.catalogService.loadProducts().then(() => {
         this.updateScrollButtonState();
       });
+      void this.categoryMenuService.loadCategories();
     }
 
     this.resetProductForm();
@@ -1154,7 +1114,7 @@ export class AdminComponent {
   }
 
   private resetProductForm(): void {
-    const defaultCategory = this.categoryOptions[0];
+    const defaultCategory = this.categoryOptions()[0];
     const defaultSubcategory = defaultCategory?.subcategories[0];
 
     this.productForm.patchValue({
@@ -1248,7 +1208,7 @@ export class AdminComponent {
     categorySlug: string | null | undefined,
   ): AdminCategoryOption | undefined {
     const normalizedSlug = categorySlug?.trim() ?? '';
-    return this.categoryOptions.find((item) => item.slug === normalizedSlug);
+    return this.categoryOptions().find((item) => item.slug === normalizedSlug);
   }
 
   private prepareNewProductForm(): void {

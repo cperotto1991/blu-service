@@ -19,12 +19,12 @@
             </button>
 
             <div class="subfilters-list">
-              @for (filter of group.links; track filter.url) {
+              @for (filter of group.subcategories; track filter.slug) {
                 <button
                   type="button"
                   class="filter"
-                  [class.active]="selectedSubFilter() === filter.url"
-                  (click)="selectSubFilter(filter.url, group.id)"
+                  [class.active]="selectedSubFilter() === filter.slug"
+                  (click)="selectSubFilter(filter.slug, group.id)"
                 >
                   {{ filter.label }}
                 </button>

@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Location } from '@angular/common';
 import { inject } from '@angular/core';
 import { FirebaseAuthService } from '../../core/services/firebase-auth.service';
+import { CategoryMenuService } from '../../core/services/category-menu.service';
 
 @Component({
   selector: 'app-site-header',
@@ -16,10 +17,16 @@ export class SiteHeaderComponent {
   userMenuOpen = signal(false);
   private readonly location = inject(Location);
   private readonly authService = inject(FirebaseAuthService);
+  private readonly categoryMenuService = inject(CategoryMenuService);
 
   readonly user = this.authService.user;
   readonly isLoggedIn = this.authService.isLoggedIn;
   readonly isAdmin = this.authService.isAdmin;
+  readonly navCategories = this.categoryMenuService.headerCategories;
+
+  constructor() {
+    void this.categoryMenuService.loadCategories();
+  }
 
   toggleMobileMenu(): void {
     this.mobileMenuOpen.update((open) => !open);

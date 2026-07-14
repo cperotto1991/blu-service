@@ -1,0 +1,269 @@
+<section class="admin-categories-page">
+  <div class="hero">
+    <p class="eyebrow">Firebase Admin</p>
+    <h1>Gestisci categorie menu</h1>
+    <p>
+      Le voci del menu principale vengono lette dalla collection
+      <strong>categories</strong> su Firestore.
+    </p>
+  </div>
+
+  <form
+    *ngIf="!isLoggedIn()"
+    class="auth-card"
+    [formGroup]="loginForm"
+    (ngSubmit)="signIn()"
+  >
+    <h2>Login admin</h2>
+
+    <label>
+      Email
+      <input type="email" formControlName="email" placeholder="admin@..." />
+    </label>
+
+    <label>
+      Password
+      <input
+        type="password"
+        formControlName="password"
+        placeholder="••••••••"
+      />
+    </label>
+
+    <button type="submit">Accedi</button>
+  </form>
+
+  <section *ngIf="isLoggedIn() && !isAuthReady()" class="auth-card">
+    <h2>Verifica permessi...</h2>
+    <p>Controllo del ruolo admin in corso su Firebase.</p>
+  </section>
+
+  <section
+    *ngIf="isLoggedIn() && isAuthReady() && !isAdmin()"
+    class="auth-card"
+  >
+    <h2>Accesso negato</h2>
+    <p>Il tuo account è autenticato ma non ha permessi admin.</p>
+    <button type="button" class="ghost" (click)="signOut()">Esci</button>
+  </section>
+
+  <ng-container *ngIf="isLoggedIn() && isAuthReady() && isAdmin()">
+    <div class="toolbar">
+      <div>
+        <strong>{{ user()?.email }}</strong>
+        <p>Sessione admin attiva.</p>
+      </div>
+
+      <div class="toolbar-actions">
+        <a routerLink="/admin" class="ghost-link">Torna a Gestione Catalogo</a>
+        <button type="button" class="ghost" (click)="signOut()">Esci</button>
+      </div>
+    </div>
+
+    <form
+      class="category-form"
+      [formGroup]="categoryForm"
+      (ngSubmit)="saveCategory()"
+    >
+      <h2>{{ editingSlug() ? "Modifica categoria" : "Nuova categoria" }}</h2>
+
+      <div class="grid">
+        <label>
+          Nome categoria
+          <input
+            type="text"
+            formControlName="label"
+            placeholder="Es. Depuratori"
+          />
+        </label>
+
+        <label class="toggle">
+          <span>Visibile nel menu</span>
+          <button
+            type="button"
+            class="bool-toggle"
+            [class.bool-toggle--on]="categoryForm.controls.enabled.value"
+            [class.bool-toggle--off]="!categoryForm.controls.enabled.value"
+            (click)="toggleCategoryEnabled()"
+          >
+            {{ categoryForm.controls.enabled.value ? "mostra" : "nascondi" }}
+          </button>
+        </label>
+      </div>
+
+      <div class="subcategories-group">
+        <label>Gruppi macro e sottocategorie</label>
+
+        <div class="group-inputs">
+          @for (group of groupInputs(); track $index; let groupIndex = $index) {
+            <div class="group-card">
+              <div class="group-card__head">
+                <input
+                  type="text"
+                  [value]="group.label"
+                  placeholder="Es. Filtrazione acqua"
+                  (input)="updateGroupInput($index, $any($event.target).value)"
+                />
+
+                <button
+                  type="button"
+                  class="bool-toggle"
+                  [class.bool-toggle--on]="group.enabled"
+                  [class.bool-toggle--off]="!group.enabled"
+                  (click)="toggleGroupEnabled($index)"
+                >
+                  {{ group.enabled ? "mostra" : "nascondi" }}
+                </button>
+
+                <button
+                  type="button"
+                  class="ghost small"
+                  (click)="removeGroupInput($index)"
+                >
+                  Rimuovi gruppo
+                </button>
+              </div>
+
+              <div class="subcategory-inputs">
+                @for (
+                  subcategory of group.subcategories;
+                  track $index;
+                  let subIndex = $index
+                ) {
+                  <div class="subcategory-row">
+                    <input
+                      type="text"
+                      [value]="subcategory.label"
+                      placeholder="Es. Uso domestico"
+                      (input)="
+                        updateSubcategoryInput(
+                          groupIndex,
+                          subIndex,
+                          $any($event.target).value
+                        )
+                      "
+                    />
+
+                    <button
+                      type="button"
+                      class="bool-toggle"
+                      [class.bool-toggle--on]="subcategory.enabled"
+                      [class.bool-toggle--off]="!subcategory.enabled"
+                      (click)="toggleSubcategoryEnabled(groupIndex, subIndex)"
+                    >
+                      {{ subcategory.enabled ? "mostra" : "nascondi" }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="ghost small"
+                      (click)="removeSubcategoryInput(groupIndex, subIndex)"
+                    >
+                      Rimuovi
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="ghost small"
+                (click)="addSubcategoryInput(groupIndex)"
+              >
+                Aggiungi sottocategoria
+              </button>
+            </div>
+          }
+        </div>
+
+        <button type="button" class="ghost small" (click)="addGroupInput()">
+          Aggiungi gruppo macro
+        </button>
+      </div>
+
+      <p class="helper">
+        Configura 3 livelli: categoria, gruppo macro, sottocategoria.
+      </p>
+
+      <div class="actions">
+        <button type="submit" [disabled]="isSaving()">
+          {{ editingSlug() ? "Aggiorna categoria" : "Salva categoria" }}
+        </button>
+        <button type="button" class="ghost" (click)="cancelEdit()">
+          Annulla
+        </button>
+      </div>
+    </form>
+
+    <p class="status success" *ngIf="statusMessage()">{{ statusMessage() }}</p>
+    <p class="status error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+
+    <section class="categories-list">
+      <h2>Categorie configurate</h2>
+
+      <p *ngIf="!hasCategories()">Nessuna categoria presente in Firestore.</p>
+
+      <article
+        *ngFor="let category of categories(); let index = index"
+        class="category-item"
+      >
+        <header>
+          <div>
+            <h3>{{ category.label }}</h3>
+            <p>
+              ordine: {{ category.order }} ·
+              {{ category.enabled ? "visibile" : "nascosta" }}
+            </p>
+          </div>
+
+          <div class="item-actions">
+            <button
+              type="button"
+              class="small ghost"
+              [disabled]="isSaving() || !canMoveUp(index)"
+              (click)="moveCategory(index, -1)"
+            >
+              Su
+            </button>
+            <button
+              type="button"
+              class="small ghost"
+              [disabled]="isSaving() || !canMoveDown(index)"
+              (click)="moveCategory(index, 1)"
+            >
+              Giu
+            </button>
+            <button
+              type="button"
+              class="small"
+              (click)="editCategory(category)"
+            >
+              Modifica
+            </button>
+            <button
+              type="button"
+              class="small danger"
+              [disabled]="isSaving()"
+              (click)="deleteCategory(category)"
+            >
+              Elimina
+            </button>
+          </div>
+        </header>
+
+        <div class="category-groups-list" *ngIf="category.groups.length > 0">
+          <div class="category-group" *ngFor="let group of category.groups">
+            <strong>{{ group.label }}</strong>
+            <span> · {{ group.enabled ? "mostra" : "nascondi" }}</span>
+
+            <ul *ngIf="group.subcategories.length > 0">
+              <li *ngFor="let sub of group.subcategories">
+                {{ sub.label }} · {{ sub.enabled ? "mostra" : "nascondi" }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </section>
+  </ng-container>
+</section>

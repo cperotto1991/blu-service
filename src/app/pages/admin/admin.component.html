@@ -151,7 +151,7 @@
             formControlName="categorySlug"
             (change)="onCategorySelectionChange($any($event.target).value)"
           >
-            @for (category of categoryOptions; track category.slug) {
+            @for (category of categoryOptions(); track category.slug) {
               <option [value]="category.slug">{{ category.label }}</option>
             }
           </select>
@@ -303,7 +303,7 @@
             (change)="onTableCategoryFilterChange($any($event.target).value)"
           >
             <option value="">Tutte</option>
-            @for (category of categoryOptions; track category.slug) {
+            @for (category of categoryOptions(); track category.slug) {
               <option [value]="category.slug">{{ category.label }}</option>
             }
           </select>
@@ -462,7 +462,7 @@
             (change)="onLinkingCategoryChange($any($event.target).value)"
           >
             <option value="">Seleziona categoria</option>
-            @for (category of categoryOptions; track category.slug) {
+            @for (category of categoryOptions(); track category.slug) {
               <option [value]="category.slug">{{ category.label }}</option>
             }
           </select>

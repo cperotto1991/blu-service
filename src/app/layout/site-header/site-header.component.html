@@ -12,14 +12,10 @@
       >
       <span aria-hidden="true">|</span>
       <a
-        href="https://wa.me/393331234567?text=Ciao%2C%20ho%20bisogno%20di%20assistenza"
+        href="https://www.bluservice.eu/assistenza-elettrodomestici/"
         target="_blank"
         rel="noopener noreferrer"
         >Assistenza</a
-      >
-      <span aria-hidden="true">|</span>
-      <a href="mailto:info@bluservice.eu?subject=Lavora%20Con%20Noi"
-        >Lavora Con Noi</a
       >
     </div>
 
@@ -97,6 +93,14 @@
               >
                 Gestione Catalogo
               </a>
+
+              <a
+                class="user-menu__item"
+                routerLink="/admin/categorie"
+                (click)="closeUserMenu()"
+              >
+                Gestisci categorie
+              </a>
             }
 
             <button
@@ -115,21 +119,11 @@
   <div class="site-header__menu-row">
     <nav class="desktop-nav" aria-label="Navigazione principale">
       <a routerLink="/offerte" routerLinkActive="active">Offerte</a>
-      <a routerLink="/catalogo" [queryParams]="{ category: 'depuratori' }"
-        >Depuratori</a
-      >
-      <a routerLink="/catalogo" [queryParams]="{ category: 'addolcitori' }"
-        >Addolcitori</a
-      >
-      <a routerLink="/catalogo" [queryParams]="{ category: 'sanificazione' }"
-        >Sanificazione</a
-      >
-      <a routerLink="/catalogo" [queryParams]="{ category: 'miscelatori' }"
-        >Miscelatori</a
-      >
-      <a routerLink="/catalogo" [queryParams]="{ category: 'accessori' }"
-        >Accessori</a
-      >
+      @for (category of navCategories(); track category.slug) {
+        <a routerLink="/catalogo" [queryParams]="{ category: category.slug }">
+          {{ category.label }}
+        </a>
+      }
     </nav>
   </div>
 
@@ -137,34 +131,15 @@
     <nav class="mobile-nav" aria-label="Navigazione mobile">
       <a (click)="closeMobileMenu()">Catalogo</a>
       <a routerLink="/offerte" (click)="closeMobileMenu()">Offerte</a>
-      <a
-        routerLink="/catalogo"
-        [queryParams]="{ category: 'depuratori' }"
-        (click)="closeMobileMenu()"
-      >
-        Depuratori
-      </a>
-      <a
-        routerLink="/catalogo"
-        [queryParams]="{ category: 'addolcitori' }"
-        (click)="closeMobileMenu()"
-      >
-        Addolcitori
-      </a>
-      <a
-        routerLink="/catalogo"
-        [queryParams]="{ category: 'sanificazione' }"
-        (click)="closeMobileMenu()"
-      >
-        Sanificazione
-      </a>
-      <a
-        routerLink="/catalogo"
-        [queryParams]="{ category: 'accessori' }"
-        (click)="closeMobileMenu()"
-      >
-        Accessori
-      </a>
+      @for (category of navCategories(); track category.slug) {
+        <a
+          routerLink="/catalogo"
+          [queryParams]="{ category: category.slug }"
+          (click)="closeMobileMenu()"
+        >
+          {{ category.label }}
+        </a>
+      }
       <a (click)="closeMobileMenu()">Assistenza</a>
     </nav>
   }
