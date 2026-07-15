@@ -44,15 +44,6 @@
         <button type="button" (click)="startAddingProduct()">
           Nuovo prodotto
         </button>
-        <button
-          *ngIf="hasSelection() && !isEditorPage()"
-          type="button"
-          class="danger"
-          [disabled]="isDeleting()"
-          (click)="deleteSelectedProducts()"
-        >
-          Elimina selezionati ({{ selectedProductCodes().length }})
-        </button>
         <button type="button" class="ghost" (click)="signOut()">Esci</button>
       </div>
     </div>
@@ -349,6 +340,53 @@
         class="table-wrap"
         *ngIf="filteredProducts().length > 0; else emptyProducts"
       >
+        <div class="bulk-actions-bar" *ngIf="hasSelection()">
+          <p>{{ selectedProductCodes().length }} selezionati</p>
+
+          <div class="bulk-actions-bar__buttons">
+            <button
+              type="button"
+              class="small"
+              [disabled]="isSaving() || isDeleting()"
+              (click)="setSelectedProductsActive(true)"
+            >
+              Attiva
+            </button>
+            <button
+              type="button"
+              class="small"
+              [disabled]="isSaving() || isDeleting()"
+              (click)="setSelectedProductsActive(false)"
+            >
+              Disattiva
+            </button>
+            <button
+              type="button"
+              class="small"
+              [disabled]="isSaving() || isDeleting()"
+              (click)="setSelectedProductsPromo(true)"
+            >
+              Promo Sì
+            </button>
+            <button
+              type="button"
+              class="small"
+              [disabled]="isSaving() || isDeleting()"
+              (click)="setSelectedProductsPromo(false)"
+            >
+              Promo No
+            </button>
+            <button
+              type="button"
+              class="small danger"
+              [disabled]="isDeleting()"
+              (click)="deleteSelectedProducts()"
+            >
+              Elimina
+            </button>
+          </div>
+        </div>
+
         <table class="products-table">
           <thead>
             <tr>

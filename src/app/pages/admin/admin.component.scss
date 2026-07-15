@@ -427,6 +427,29 @@ button:focus-visible,
   border-radius: 18px;
 }
 
+.bulk-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.75rem 0.9rem;
+  background: #f5f8fc;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.bulk-actions-bar p {
+  margin: 0;
+  font-weight: 700;
+  color: #111111;
+}
+
+.bulk-actions-bar__buttons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .products-table {
   width: 100%;
   border-collapse: collapse;
@@ -749,6 +772,19 @@ button:focus-visible,
   .table-wrap {
     border: 0;
     overflow: visible;
+  }
+
+  .bulk-actions-bar {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 14px;
+    margin-bottom: 0.6rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bulk-actions-bar__buttons {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .products-table {

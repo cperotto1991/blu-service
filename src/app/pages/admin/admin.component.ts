@@ -871,6 +871,104 @@ export class AdminComponent {
     }
   }
 
+  async setSelectedProductsActive(nextIsActive: boolean): Promise<void> {
+    if (!this.hasSelection()) {
+      return;
+    }
+
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.isSaving.set(true);
+
+    const actionLabel = nextIsActive ? 'attivati' : 'disattivati';
+
+    try {
+      const selectedProducts = this.getSelectedProducts();
+      let updatedCount = 0;
+
+      for (const product of selectedProducts) {
+        if (product.isActive === nextIsActive) {
+          continue;
+        }
+
+        await this.dataService.saveProduct({
+          ...product,
+          isActive: nextIsActive,
+        });
+        updatedCount += 1;
+      }
+
+      await this.catalogService.loadProducts();
+
+      this.statusMessage.set(
+        updatedCount > 0
+          ? `${updatedCount} prodotti ${actionLabel}.`
+          : `Nessun prodotto da aggiornare: tutti gia ${actionLabel}.`,
+      );
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
+  async setSelectedProductsPromo(nextIsOffer: boolean): Promise<void> {
+    if (!this.hasSelection()) {
+      return;
+    }
+
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.isSaving.set(true);
+
+    const actionLabel = nextIsOffer ? 'promo attivata' : 'promo disattivata';
+
+    try {
+      const selectedProducts = this.getSelectedProducts();
+      let updatedCount = 0;
+
+      for (const product of selectedProducts) {
+        if (product.isOffer === nextIsOffer) {
+          continue;
+        }
+
+        const nextDiscount = nextIsOffer
+          ? this.clampDiscount(product.discountPercent ?? 10)
+          : 0;
+        const nextOfferType = nextIsOffer
+          ? product.offerType?.trim() || 'Promo'
+          : undefined;
+
+        await this.dataService.saveProduct({
+          ...product,
+          isOffer: nextIsOffer,
+          offerType: nextOfferType,
+          offerLabel: nextOfferType
+            ? this.getOfferTypeLabel(nextOfferType)
+            : undefined,
+          discountPercent: nextIsOffer ? nextDiscount : undefined,
+          finalPrice: nextIsOffer
+            ? this.calculateDiscountedPrice(product.basePrice, nextDiscount)
+            : undefined,
+        });
+
+        updatedCount += 1;
+      }
+
+      await this.catalogService.loadProducts();
+
+      this.statusMessage.set(
+        updatedCount > 0
+          ? `${updatedCount} prodotti con ${actionLabel}.`
+          : `Nessun prodotto da aggiornare: stato promo gia allineato.`,
+      );
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
   toggleProductSelection(productCode: string, checked: boolean): void {
     this.selectedProductCodes.update((codes) => {
       if (checked) {
@@ -904,6 +1002,12 @@ export class AdminComponent {
       products.length > 0 &&
       products.every((product) => selected.includes(product.code))
     );
+  }
+
+  private getSelectedProducts(): Product[] {
+    const selectedCodes = new Set(this.selectedProductCodes());
+
+    return this.products().filter((product) => selectedCodes.has(product.code));
   }
 
   trackByLinkingProductId(_index: number, product: Product): number {
@@ -1139,7 +1243,7 @@ export class AdminComponent {
     }
 
     if (code === 'storage/unknown') {
-      return 'Errore durante l\'upload immagine su Firebase Storage.';
+      return "Errore durante l'upload immagine su Firebase Storage.";
     }
 
     if (error instanceof Error) {
