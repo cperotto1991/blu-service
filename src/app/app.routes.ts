@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { PublicLayoutComponent } from './layout/public-layout/public-layout.component';
+import { priceVisibilityGuard } from './core/guards/price-visibility.guard';
 
 export const routes: Routes = [
   {
@@ -8,11 +9,13 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        canActivate: [priceVisibilityGuard],
         loadComponent: () =>
           import('./pages/home/home.component').then((m) => m.HomeComponent),
       },
       {
         path: 'offerte',
+        canActivate: [priceVisibilityGuard],
         loadComponent: () =>
           import('./pages/offers/offers.component').then(
             (m) => m.OffersComponent,
@@ -20,6 +23,7 @@ export const routes: Routes = [
       },
       {
         path: 'catalogo',
+        canActivate: [priceVisibilityGuard],
         loadComponent: () =>
           import('./pages/catalog/catalog.component').then(
             (m) => m.CatalogComponent,
@@ -27,6 +31,7 @@ export const routes: Routes = [
       },
       {
         path: 'catalogo/:code',
+        canActivate: [priceVisibilityGuard],
         loadComponent: () =>
           import('./pages/product-detail/product-detail.component').then(
             (m) => m.ProductDetailComponent,
@@ -34,6 +39,7 @@ export const routes: Routes = [
       },
       {
         path: 'configura/:id',
+        canActivate: [priceVisibilityGuard],
         loadComponent: () =>
           import('./pages/configurator/configurator.component').then(
             (m) => m.ConfiguratorComponent,
@@ -41,6 +47,7 @@ export const routes: Routes = [
       },
       {
         path: 'richiesta-preventivo',
+        canActivate: [priceVisibilityGuard],
         loadComponent: () =>
           import('./pages/quote-request/quote-request.component').then(
             (m) => m.QuoteRequestComponent,

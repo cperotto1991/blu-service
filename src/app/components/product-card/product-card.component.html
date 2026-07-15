@@ -14,9 +14,20 @@
     <p>{{ product.shortDescription }}</p>
 
     <div class="product-card__footer">
-      <span class="product-card__price">
-        Da {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
-      </span>
+      @if (canSeeProductPrice()) {
+        <div class="product-card__price-wrap">
+          <span class="product-card__price">
+            Da {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+          </span>
+
+          @if (canSeeSupplierPrice()) {
+            <span class="product-card__supplier-price">
+              Prezzo collaboratore:
+              {{ product.supplierPrice | currency: "EUR" : "symbol" : "1.0-0" }}
+            </span>
+          }
+        </div>
+      }
 
       <div class="product-card__actions">
         <button type="button" class="btn-add" (click)="addToConfigurator()">

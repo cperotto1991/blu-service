@@ -3,6 +3,18 @@
   background: linear-gradient(180deg, #f2f6fb 0%, #f7f9fc 62%, #f1f4f8 100%);
 }
 
+.home-auth-error {
+  margin: 1rem auto 0;
+  width: min(1100px, calc(100% - 2rem));
+  border-radius: 12px;
+  border: 1px solid rgba(226, 85, 49, 0.4);
+  background: #fff3ef;
+  color: #8a1f09;
+  padding: 0.8rem 1rem;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(138, 31, 9, 0.1);
+}
+
 .home-hero {
   min-height: 600px;
   padding: 56px 3vw 40px;
@@ -17,6 +29,10 @@
       transparent 34%
     ),
     linear-gradient(100deg, #02162d 0%, #032a57 54%, #052040 100%);
+}
+
+.home-hero--no-offers {
+  grid-template-columns: minmax(360px, 1fr);
 }
 
 .home-hero__content {
@@ -175,6 +191,14 @@
   color: #9fd9ff;
 }
 
+.hero-carousel__supplier-price {
+  margin-top: 0.45rem;
+  color: #ffd895;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
 .hero-carousel__actions {
   margin-top: 10px;
   display: flex;
@@ -210,6 +234,13 @@
   letter-spacing: 0.07em;
   text-transform: uppercase;
   font-weight: 700;
+}
+
+.offer-card__supplier-price {
+  margin-top: 0.45rem;
+  color: #9a5b0e;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .hero-carousel__buy {

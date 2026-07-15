@@ -67,6 +67,13 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "local": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "prerender": false,
+              "ssr": false
             }
           },
           "defaultConfiguration": "production"
@@ -79,6 +86,9 @@
             },
             "development": {
               "buildTarget": "blu-service-shop:build:development"
+            },
+            "local": {
+              "buildTarget": "blu-service-shop:build:local"
             }
           },
           "defaultConfiguration": "development"

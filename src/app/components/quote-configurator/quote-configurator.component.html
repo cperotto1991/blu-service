@@ -16,9 +16,20 @@
 
           <div class="configurator-item__info">
             <strong>{{ item.name }}</strong>
-            <span>
-              {{ item.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
-            </span>
+            @if (canSeeProductPrice(item)) {
+              <span>
+                {{ item.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+              </span>
+
+              @if (canSeeSupplierPrice(item)) {
+                <small>
+                  Prezzo collaboratore:
+                  {{
+                    item.supplierPrice | currency: "EUR" : "symbol" : "1.0-0"
+                  }}
+                </small>
+              }
+            }
           </div>
 
           <button
@@ -34,12 +45,14 @@
     </div>
 
     <div class="configurator-total">
-      <div>
-        <span>Totale configurazione</span>
-        <strong>{{
-          selectedTotal() | currency: "EUR" : "symbol" : "1.0-0"
-        }}</strong>
-      </div>
+      @if (canSeeTotal()) {
+        <div>
+          <span>Totale configurazione</span>
+          <strong>{{
+            selectedTotal() | currency: "EUR" : "symbol" : "1.0-0"
+          }}</strong>
+        </div>
+      }
 
       <a routerLink="/richiesta-preventivo" class="view-configuration-btn">
         Vedi configurazione

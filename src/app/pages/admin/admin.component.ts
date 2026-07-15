@@ -5,6 +5,7 @@ import {
   HostListener,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   ViewChild,
   signal,
@@ -52,6 +53,7 @@ export class AdminComponent {
   readonly isAuthReady = this.authService.isReady;
   readonly isLoggedIn = this.authService.isLoggedIn;
   readonly isAdmin = this.authService.isAdmin;
+  readonly isCollaborator = this.authService.isCollaborator;
   readonly products = this.catalogService.products;
   readonly tableSearch = signal('');
   readonly promoFilter = signal<PromoFilter>('all');
@@ -77,14 +79,12 @@ export class AdminComponent {
     let items = this.products();
 
     if (categoryFilter) {
-      items = items.filter(
-        (product) => product.categorySlug === categoryFilter,
-      );
+      items = items.filter((product) => product.category === categoryFilter);
     }
 
     if (subcategoryFilter) {
       items = items.filter(
-        (product) => product.subcategorySlug === subcategoryFilter,
+        (product) => product.subcategory === subcategoryFilter,
       );
     }
 
@@ -137,6 +137,7 @@ export class AdminComponent {
   readonly linkingErrorMessage = signal('');
   readonly showScrollTopButton = signal(false);
   readonly showScrollBottomButton = signal(false);
+  private readonly nonAdminRedirectHandled = signal(false);
   readonly categoryOptions = computed<AdminCategoryOption[]>(() =>
     this.categoryMenuService.categories().map((category) => ({
       slug: category.slug,
@@ -150,19 +151,15 @@ export class AdminComponent {
     })),
   );
 
-  readonly loginForm = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-  });
-
   readonly productForm = this.fb.nonNullable.group({
     code: ['', [Validators.required]],
     name: ['', [Validators.required]],
     shortDescription: ['', [Validators.required]],
     description: ['', [Validators.required]],
-    categorySlug: ['', [Validators.required]],
-    subcategorySlug: ['', [Validators.required]],
+    category: ['', [Validators.required]],
+    subcategory: ['', [Validators.required]],
     basePrice: [0, [Validators.required, Validators.min(0)]],
+    showPrice: [true],
     supplierPrice: [0, [Validators.min(0)]],
     finalPrice: [0, [Validators.min(0)]],
     isOffer: [false],
@@ -182,6 +179,12 @@ export class AdminComponent {
   private productsTableWrapRef?: ElementRef<HTMLElement>;
 
   constructor() {
+    const pendingAuthError = this.authService.consumeAuthError();
+
+    if (pendingAuthError) {
+      this.errorMessage.set(pendingAuthError);
+    }
+
     if (this.isBrowser) {
       void this.catalogService.loadProducts().then(() => {
         this.updateScrollButtonState();
@@ -199,6 +202,22 @@ export class AdminComponent {
     this.route.paramMap.subscribe(() => {
       void this.syncPageModeFromRoute();
     });
+
+    effect(() => {
+      if (!this.isLoggedIn()) {
+        this.nonAdminRedirectHandled.set(false);
+        return;
+      }
+
+      if (
+        this.isAuthReady() &&
+        !this.isAdmin() &&
+        !this.nonAdminRedirectHandled()
+      ) {
+        this.nonAdminRedirectHandled.set(true);
+        void this.handleUnauthorizedAdminAccess();
+      }
+    });
   }
 
   @HostListener('window:scroll')
@@ -211,24 +230,6 @@ export class AdminComponent {
     this.updateScrollButtonState();
   }
 
-  async signIn(): Promise<void> {
-    this.errorMessage.set('');
-    this.statusMessage.set('');
-
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched();
-      return;
-    }
-
-    try {
-      const { email, password } = this.loginForm.getRawValue();
-      await this.authService.signIn(email, password);
-      this.statusMessage.set('Accesso completato.');
-    } catch (error) {
-      this.errorMessage.set(this.getErrorMessage(error));
-    }
-  }
-
   async signInWithGoogle(): Promise<void> {
     this.errorMessage.set('');
     this.statusMessage.set('');
@@ -236,6 +237,14 @@ export class AdminComponent {
 
     try {
       await this.authService.signInWithGoogle();
+
+      const pendingAuthError = this.authService.consumeAuthError();
+
+      if (pendingAuthError) {
+        this.errorMessage.set(pendingAuthError);
+        return;
+      }
+
       this.statusMessage.set('Accesso Google completato.');
     } catch (error) {
       this.errorMessage.set(this.getErrorMessage(error));
@@ -251,6 +260,30 @@ export class AdminComponent {
     this.editingProductCode.set(null);
     this.selectedProductCodes.set([]);
     this.statusMessage.set('Sei uscito dalla sessione.');
+  }
+
+  private async handleUnauthorizedAdminAccess(): Promise<void> {
+    if (!this.isCollaborator()) {
+      try {
+        await this.authService.signOut();
+      } catch {
+        // Continue with redirect even if sign-out fails.
+      }
+    }
+
+    this.showProductForm.set(false);
+    this.isEditorPage.set(false);
+    this.editingProductCode.set(null);
+    this.selectedProductCodes.set([]);
+
+    await this.router.navigate(
+      ['/'],
+      this.isCollaborator()
+        ? undefined
+        : {
+            queryParams: { authError: 'not-admin' },
+          },
+    );
   }
 
   scrollToTop(): void {
@@ -492,9 +525,10 @@ export class AdminComponent {
       name: product.name,
       shortDescription: product.shortDescription,
       description: product.description,
-      categorySlug: product.categorySlug,
-      subcategorySlug: product.subcategorySlug,
+      category: product.category,
+      subcategory: product.subcategory,
       basePrice: product.basePrice,
+      showPrice: product.showPrice !== false,
       supplierPrice: this.normalizeMoney(product.supplierPrice ?? 0),
       finalPrice: this.getFinalPriceForProduct(product),
       isOffer: product.isOffer,
@@ -505,7 +539,7 @@ export class AdminComponent {
 
     this.updateOfferValidators(product.isOffer);
 
-    this.applyCategorySelection(product.categorySlug, product.subcategorySlug);
+    this.applyCategorySelection(product.category, product.subcategory);
   }
 
   onCategorySelectionChange(categorySlug: string): void {
@@ -515,7 +549,7 @@ export class AdminComponent {
   openLinkProductsModal(): void {
     this.linkingErrorMessage.set('');
     this.showLinkProductsModal.set(true);
-    this.linkingCategorySlug.set(this.productForm.value.categorySlug ?? '');
+    this.linkingCategorySlug.set(this.productForm.value.category ?? '');
     this.linkingSubcategorySlug.set('');
     this.linkingResults.set([]);
     this.linkingSelectedCodes.set(
@@ -566,7 +600,7 @@ export class AdminComponent {
       const filtered = products
         .filter((product) =>
           selectedSubcategory
-            ? product.subcategorySlug === selectedSubcategory
+            ? product.subcategory === selectedSubcategory
             : true,
         )
         .filter((product) => product.code.trim().toUpperCase() !== currentCode)
@@ -748,14 +782,14 @@ export class AdminComponent {
 
   onSubcategorySelectionChange(subcategorySlug: string): void {
     this.productForm.patchValue({
-      subcategorySlug,
+      subcategory: subcategorySlug,
     });
   }
 
   getCurrentSubcategoryOptions(): AdminSubcategoryOption[] {
     return (
-      this.findCategoryOption(this.productForm.value.categorySlug)
-        ?.subcategories ?? []
+      this.findCategoryOption(this.productForm.value.category)?.subcategories ??
+      []
     );
   }
 
@@ -881,9 +915,10 @@ export class AdminComponent {
     name: string;
     shortDescription: string;
     description: string;
-    categorySlug: string;
-    subcategorySlug: string;
+    category: string;
+    subcategory: string;
     basePrice: number;
+    showPrice: boolean;
     supplierPrice: number;
     finalPrice: number;
     isOffer: boolean;
@@ -895,8 +930,8 @@ export class AdminComponent {
     const normalizedBasePrice = this.normalizeMoney(value.basePrice);
     const normalizedFinalPrice = this.normalizeMoney(value.finalPrice);
     const normalizedDiscount = this.clampDiscount(value.discountPercent);
-    const normalizedCategorySlug = value.categorySlug.trim();
-    const normalizedSubcategorySlug = value.subcategorySlug.trim();
+    const normalizedCategory = value.category.trim();
+    const normalizedSubcategory = value.subcategory.trim();
     const existingProduct = this.editingProductCode()
       ? this.products().find(
           (product) => product.code === this.editingProductCode(),
@@ -905,17 +940,15 @@ export class AdminComponent {
 
     return {
       id: this.createNumericIdFromCode(normalizedCode),
-      slug: '',
       code: normalizedCode,
       name: value.name.trim(),
-      category: normalizedCategorySlug,
-      categorySlug: normalizedCategorySlug,
+      category: normalizedCategory,
       groupId: '',
-      subcategory: normalizedSubcategorySlug,
-      subcategorySlug: normalizedSubcategorySlug,
+      subcategory: normalizedSubcategory,
       shortDescription: value.shortDescription.trim(),
       description: value.description.trim(),
       basePrice: normalizedBasePrice,
+      showPrice: value.showPrice,
       supplierPrice: this.normalizeMoney(value.supplierPrice),
       finalPrice:
         value.isOffer && normalizedDiscount > 0
@@ -972,7 +1005,10 @@ export class AdminComponent {
       return null;
     }
 
-    const value = raw as Partial<Product>;
+    const value = raw as Partial<Product> & {
+      categorySlug?: unknown;
+      subcategorySlug?: unknown;
+    };
     const code = String(value.code ?? value.id ?? '')
       .trim()
       .toUpperCase();
@@ -1008,17 +1044,15 @@ export class AdminComponent {
         typeof value.id === 'number' && Number.isFinite(value.id)
           ? value.id
           : this.createNumericIdFromCode(code),
-      slug: String(value.slug ?? ''),
       code,
       name: String(value.name ?? code),
       category: String(value.category ?? categorySlug),
-      categorySlug,
       groupId: String(value.groupId ?? ''),
       subcategory: String(value.subcategory ?? subcategorySlug),
-      subcategorySlug,
       shortDescription: String(value.shortDescription ?? ''),
       description: String(value.description ?? ''),
       basePrice: normalizedBasePrice,
+      showPrice: value.showPrice !== false,
       finalPrice:
         typeof value.finalPrice === 'number'
           ? this.normalizeMoney(value.finalPrice)
@@ -1066,6 +1100,19 @@ export class AdminComponent {
       typeof error === 'object' && error && 'code' in error
         ? String((error as { code?: unknown }).code)
         : '';
+
+    if (
+      code === 'auth/invalid-credential' ||
+      code === 'auth/invalid-login-credentials' ||
+      code === 'auth/wrong-password' ||
+      code === 'auth/user-not-found'
+    ) {
+      return 'Email o password non validi.';
+    }
+
+    if (code === 'auth/invalid-email') {
+      return 'Email non valida.';
+    }
 
     if (code === 'auth/unauthorized-domain') {
       return 'Dominio non autorizzato su Firebase Auth. Aggiungi questo dominio in Authentication > Settings > Authorized domains.';
@@ -1167,9 +1214,10 @@ export class AdminComponent {
       name: '',
       shortDescription: '',
       description: '',
-      categorySlug: defaultCategory?.slug ?? '',
-      subcategorySlug: defaultSubcategory?.slug ?? '',
+      category: defaultCategory?.slug ?? '',
+      subcategory: defaultSubcategory?.slug ?? '',
       basePrice: 0,
+      showPrice: true,
       supplierPrice: 0,
       finalPrice: 0,
       isOffer: false,
@@ -1233,8 +1281,8 @@ export class AdminComponent {
 
     if (!category) {
       this.productForm.patchValue({
-        categorySlug: '',
-        subcategorySlug: '',
+        category: '',
+        subcategory: '',
       });
       return;
     }
@@ -1245,8 +1293,8 @@ export class AdminComponent {
       ) ?? category.subcategories[0];
 
     this.productForm.patchValue({
-      categorySlug: category.slug,
-      subcategorySlug: subcategory?.slug ?? '',
+      category: category.slug,
+      subcategory: subcategory?.slug ?? '',
     });
   }
 

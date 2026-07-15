@@ -6,6 +6,7 @@ import { CatalogService } from '../../core/services/catalog.service';
 import { Product } from '../../core/models/product.model';
 import { QuoteConfiguratorService } from '../../core/services/quote-configurator.service';
 import { RelatedProductGroup } from '../../core/models/product-detail.models';
+import { PriceVisibilityService } from '../../core/services/price-visibility.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -18,6 +19,7 @@ export class ProductDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly catalogService = inject(CatalogService);
   private readonly quoteConfiguratorService = inject(QuoteConfiguratorService);
+  private readonly priceVisibilityService = inject(PriceVisibilityService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
@@ -93,5 +95,13 @@ export class ProductDetailComponent {
     }
 
     this.addToConfiguration(product);
+  }
+
+  canSeeProductPrice(product: Product | undefined): boolean {
+    return this.priceVisibilityService.canSeeProductPrice(product);
+  }
+
+  canSeeSupplierPrice(product: Product | undefined): boolean {
+    return this.priceVisibilityService.canSeeSupplierPrice(product);
   }
 }

@@ -12,6 +12,8 @@ export interface HomeOfferCard {
   name: string;
   shortDescription: string;
   imageUrl: string;
+  showPrice: boolean;
+  supplierPrice?: number;
   discountPercent: number;
   discountedPrice: number;
   basePrice: number;
@@ -24,6 +26,8 @@ export interface HeroSlide {
   title: string;
   shortDescription: string;
   imageUrl: string;
+  showPrice: boolean;
+  supplierPrice?: number;
   discountPercent: number;
   discountedPrice: number;
   basePrice: number;

@@ -526,6 +526,11 @@ export class FirebaseDataService {
   }
 
   private mapProduct(data: Partial<Product>, fallbackId: string): Product {
+    const legacyData = data as Partial<Product> & {
+      categorySlug?: unknown;
+      subcategorySlug?: unknown;
+    };
+
     const normalizedCode = this.normalizeProductCode(
       String(data.code ?? fallbackId ?? ''),
       fallbackId,
@@ -538,17 +543,15 @@ export class FirebaseDataService {
         typeof data.id === 'number' && Number.isFinite(data.id)
           ? data.id
           : this.createNumericIdFromCode(normalizedCode),
-      slug: String(data.slug ?? ''),
       code: normalizedCode,
       name: String(data.name ?? ''),
-      category: String(data.category ?? data.categorySlug ?? ''),
-      categorySlug: String(data.categorySlug ?? data.category ?? ''),
+      category: String(data.category ?? legacyData.categorySlug ?? ''),
       groupId: String(data.groupId ?? ''),
-      subcategory: String(data.subcategory ?? data.subcategorySlug ?? ''),
-      subcategorySlug: String(data.subcategorySlug ?? data.subcategory ?? ''),
+      subcategory: String(data.subcategory ?? legacyData.subcategorySlug ?? ''),
       shortDescription: String(data.shortDescription ?? ''),
       description: String(data.description ?? ''),
       basePrice: Number(data.basePrice ?? 0),
+      showPrice: data.showPrice !== false,
       supplierPrice:
         typeof data.supplierPrice === 'number' ? data.supplierPrice : undefined,
       finalPrice:
@@ -577,6 +580,11 @@ export class FirebaseDataService {
   }
 
   private normalizeProduct(product: Partial<Product>): Product {
+    const legacyProduct = product as Partial<Product> & {
+      categorySlug?: unknown;
+      subcategorySlug?: unknown;
+    };
+
     const normalizedCode = this.normalizeProductCode(
       String(product.code ?? ''),
       String(product.id ?? ''),
@@ -588,19 +596,17 @@ export class FirebaseDataService {
         typeof product.id === 'number' && Number.isFinite(product.id)
           ? product.id
           : this.createNumericIdFromCode(normalizedCode),
-      slug: String(product.slug ?? ''),
       code: normalizedCode,
       name: String(product.name ?? ''),
-      category: String(product.category ?? product.categorySlug ?? ''),
-      categorySlug: String(product.categorySlug ?? product.category ?? ''),
+      category: String(product.category ?? legacyProduct.categorySlug ?? ''),
       groupId: String(product.groupId ?? ''),
-      subcategory: String(product.subcategory ?? product.subcategorySlug ?? ''),
-      subcategorySlug: String(
-        product.subcategorySlug ?? product.subcategory ?? '',
+      subcategory: String(
+        product.subcategory ?? legacyProduct.subcategorySlug ?? '',
       ),
       shortDescription: String(product.shortDescription ?? ''),
       description: String(product.description ?? ''),
       basePrice: Number(product.basePrice ?? 0),
+      showPrice: product.showPrice !== false,
       supplierPrice:
         typeof product.supplierPrice === 'number'
           ? product.supplierPrice
@@ -652,17 +658,15 @@ export class FirebaseDataService {
   private toPersistenceProduct(product: Product): Record<string, unknown> {
     const payload: Record<string, unknown> = {
       id: product.id,
-      slug: product.slug,
       code: product.code,
       name: product.name,
       category: product.category,
-      categorySlug: product.categorySlug,
       groupId: product.groupId,
       subcategory: product.subcategory,
-      subcategorySlug: product.subcategorySlug,
       shortDescription: product.shortDescription,
       description: product.description,
       basePrice: product.basePrice,
+      showPrice: product.showPrice,
       isActive: product.isActive,
       imageUrl: product.imageUrl,
       tags: product.tags ?? [],

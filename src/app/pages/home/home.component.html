@@ -1,5 +1,11 @@
 <section class="home-showcase">
-  <section class="home-hero">
+  @if (authErrorMessage()) {
+    <div class="home-auth-error" role="alert" aria-live="polite">
+      {{ authErrorMessage() }}
+    </div>
+  }
+
+  <section class="home-hero" [class.home-hero--no-offers]="!hasHeroOffers()">
     <div class="home-hero__content">
       <div class="hero-brand">
         <img src="/assets/images/logogrande.png" alt="BLU Service" />
@@ -12,84 +18,103 @@
         e la tua attivita.
       </p>
     </div>
-    <div class="home-hero__visual">
-      <div
-        class="hero-carousel"
-        (mouseenter)="pauseHeroCarousel()"
-        (mouseleave)="resumeHeroCarousel()"
-      >
-        @for (slide of heroSlides(); track slide.id; let i = $index) {
-          <img
-            class="hero-carousel__slide"
-            [class.is-active]="i === activeHeroSlideIndex()"
-            [src]="slide.imageUrl"
-            [alt]="slide.title"
-          />
-        }
+    @if (hasHeroOffers()) {
+      <div class="home-hero__visual">
+        <div
+          class="hero-carousel"
+          (mouseenter)="pauseHeroCarousel()"
+          (mouseleave)="resumeHeroCarousel()"
+        >
+          @for (slide of heroSlides(); track slide.id; let i = $index) {
+            <img
+              class="hero-carousel__slide"
+              [class.is-active]="i === activeHeroSlideIndex()"
+              [src]="slide.imageUrl"
+              [alt]="slide.title"
+            />
+          }
 
-        <div class="hero-carousel__caption">
-          <span class="hero-carousel__promo">{{ heroPromoText }}</span>
-          <strong>{{ activeHeroSlideData().title }}</strong>
-          <p>{{ activeHeroSlideData().shortDescription }}</p>
-          <div class="hero-carousel__price">
-            <strong
-              >{{
-                formatPrice(activeHeroSlideData().discountedPrice)
-              }}
-              EUR</strong
+          @if (hasHeroOffers()) {
+            <div class="hero-carousel__caption">
+              <span class="hero-carousel__promo">{{ heroPromoText }}</span>
+              <strong>{{ activeHeroSlideData().title }}</strong>
+              <p>{{ activeHeroSlideData().shortDescription }}</p>
+              @if (canSeeSlidePrice(activeHeroSlideData())) {
+                <div class="hero-carousel__price">
+                  <strong
+                    >{{
+                      formatPrice(activeHeroSlideData().discountedPrice)
+                    }}
+                    EUR</strong
+                  >
+                  <span
+                    >{{
+                      formatPrice(activeHeroSlideData().basePrice)
+                    }}
+                    EUR</span
+                  >
+                </div>
+
+                @if (canSeeSlideSupplierPrice(activeHeroSlideData())) {
+                  <div class="hero-carousel__supplier-price">
+                    Prezzo collaboratore:
+                    {{ formatPrice(activeHeroSlideData().supplierPrice ?? 0) }}
+                    EUR
+                  </div>
+                }
+              }
+              <div class="hero-carousel__actions">
+                @if (canSeeSlidePrice(activeHeroSlideData())) {
+                  <span class="hero-carousel__discount"
+                    >-{{ activeHeroSlideData().discountPercent }}%</span
+                  >
+                  <span class="hero-carousel__saving"
+                    >Risparmi
+                    {{ formatPrice(activeHeroSlideData().savings) }} EUR</span
+                  >
+                }
+                <a
+                  class="hero-carousel__buy"
+                  [routerLink]="['/catalogo', activeHeroSlideData().code]"
+                >
+                  Acquista ora
+                </a>
+              </div>
+            </div>
+          }
+
+          @if (heroSlides().length > 1) {
+            <button
+              type="button"
+              class="hero-carousel__control hero-carousel__control--prev"
+              (click)="previousHeroSlide()"
+              aria-label="Immagine precedente"
             >
-            <span>{{ formatPrice(activeHeroSlideData().basePrice) }} EUR</span>
-          </div>
-          <div class="hero-carousel__actions">
-            <span class="hero-carousel__discount"
-              >-{{ activeHeroSlideData().discountPercent }}%</span
+              ‹
+            </button>
+            <button
+              type="button"
+              class="hero-carousel__control hero-carousel__control--next"
+              (click)="nextHeroSlide()"
+              aria-label="Immagine successiva"
             >
-            <span class="hero-carousel__saving"
-              >Risparmi
-              {{ formatPrice(activeHeroSlideData().savings) }} EUR</span
-            >
-            @if (activeHeroSlideData().id !== 0) {
-              <a
-                class="hero-carousel__buy"
-                [routerLink]="['/catalogo', activeHeroSlideData().code]"
-              >
-                Acquista ora
-              </a>
-            }
-          </div>
+              ›
+            </button>
+
+            <div class="hero-carousel__dots" aria-label="Indicatori carousel">
+              @for (slide of heroSlides(); track slide.id; let i = $index) {
+                <button
+                  type="button"
+                  [class.is-active]="i === activeHeroSlideIndex()"
+                  (click)="setHeroSlide(i)"
+                  [attr.aria-label]="'Vai alla slide ' + (i + 1)"
+                ></button>
+              }
+            </div>
+          }
         </div>
-
-        @if (heroSlides().length > 1) {
-          <button
-            type="button"
-            class="hero-carousel__control hero-carousel__control--prev"
-            (click)="previousHeroSlide()"
-            aria-label="Immagine precedente"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            class="hero-carousel__control hero-carousel__control--next"
-            (click)="nextHeroSlide()"
-            aria-label="Immagine successiva"
-          >
-            ›
-          </button>
-
-          <div class="hero-carousel__dots" aria-label="Indicatori carousel">
-            @for (slide of heroSlides(); track slide.id; let i = $index) {
-              <button
-                type="button"
-                [class.is-active]="i === activeHeroSlideIndex()"
-                (click)="setHeroSlide(i)"
-                [attr.aria-label]="'Vai alla slide ' + (i + 1)"
-              ></button>
-            }
-          </div>
-        }
       </div>
-    </div>
+    }
   </section>
 
   <section class="home-offers">
@@ -113,13 +138,23 @@
           <div class="offer-card__body">
             <h3>{{ offer.name }}</h3>
             <p>{{ offer.shortDescription }}</p>
-            <div class="offer-card__price">
-              <strong>{{ formatPrice(offer.discountedPrice) }} EUR</strong>
-              <span>{{ formatPrice(offer.basePrice) }} EUR</span>
-            </div>
-            <div class="offer-card__save">
-              Risparmi {{ formatPrice(offer.savings) }} EUR
-            </div>
+            @if (canSeeOfferPrice(offer)) {
+              <div class="offer-card__price">
+                <strong>{{ formatPrice(offer.discountedPrice) }} EUR</strong>
+                <span>{{ formatPrice(offer.basePrice) }} EUR</span>
+              </div>
+
+              @if (canSeeOfferSupplierPrice(offer)) {
+                <div class="offer-card__supplier-price">
+                  Prezzo collaboratore:
+                  {{ formatPrice(offer.supplierPrice ?? 0) }} EUR
+                </div>
+              }
+
+              <div class="offer-card__save">
+                Risparmi {{ formatPrice(offer.savings) }} EUR
+              </div>
+            }
             <span class="offer-card__cta">Scopri l'offerta</span>
           </div>
         </a>

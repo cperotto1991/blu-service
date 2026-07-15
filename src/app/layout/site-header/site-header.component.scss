@@ -136,6 +136,11 @@
   cursor: pointer;
 }
 
+.user-menu__item--active {
+  border-color: rgba(126, 215, 193, 0.7);
+  background: rgba(126, 215, 193, 0.18);
+}
+
 .site-header__menu-row {
   min-height: 3.75rem;
   padding: 0 3vw;

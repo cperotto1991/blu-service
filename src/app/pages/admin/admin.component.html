@@ -4,30 +4,11 @@
     <h1>Gestisci catalogo, immagini e accesso admin</h1>
   </div>
 
-  <form
-    *ngIf="!isLoggedIn()"
-    class="auth-card"
-    [formGroup]="loginForm"
-    (ngSubmit)="signIn()"
-  >
+  <section *ngIf="!isLoggedIn()" class="auth-card">
     <h2>Login admin</h2>
-
-    <label>
-      Email
-      <input type="email" formControlName="email" placeholder="admin@..." />
-    </label>
-
-    <label>
-      Password
-      <input
-        type="password"
-        formControlName="password"
-        placeholder="••••••••"
-      />
-    </label>
+    <p>Accesso consentito solo con account Google autorizzato.</p>
 
     <div class="auth-actions">
-      <button type="submit">Accedi</button>
       <button
         type="button"
         class="google"
@@ -40,22 +21,16 @@
         <ng-template #googleLoading>Accesso Google...</ng-template>
       </button>
     </div>
-  </form>
+
+    <p class="status error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+    <p class="status success" *ngIf="statusMessage()">
+      {{ statusMessage() }}
+    </p>
+  </section>
 
   <section *ngIf="isLoggedIn() && !isAuthReady()" class="auth-card">
     <h2>Verifica permessi...</h2>
     <p>Controllo del ruolo admin in corso su Firebase.</p>
-  </section>
-
-  <section
-    *ngIf="isLoggedIn() && isAuthReady() && !isAdmin()"
-    class="auth-card"
-  >
-    <h2>Accesso negato</h2>
-    <p>
-      Il tuo account è autenticato ma non è presente nella collection admins.
-    </p>
-    <button type="button" class="ghost" (click)="signOut()">Esci</button>
   </section>
 
   <ng-container *ngIf="isLoggedIn() && isAuthReady() && isAdmin()">
@@ -161,7 +136,7 @@
         <label>
           Categoria menu
           <select
-            formControlName="categorySlug"
+            formControlName="category"
             (change)="onCategorySelectionChange($any($event.target).value)"
           >
             @for (category of categoryOptions(); track category.slug) {
@@ -173,7 +148,7 @@
         <label>
           Sottocategoria menu
           <select
-            formControlName="subcategorySlug"
+            formControlName="subcategory"
             (change)="onSubcategorySelectionChange($any($event.target).value)"
           >
             @for (
@@ -196,6 +171,16 @@
                 formControlName="isOffer"
                 (change)="onOfferToggle($any($event.target).checked)"
               />
+              <span class="offer-toggle__slider"></span>
+            </span>
+          </span>
+        </label>
+
+        <label class="offer-toggle">
+          <span class="offer-toggle__label">Mostra prezzo a tutti</span>
+          <span class="offer-toggle__control">
+            <span class="offer-toggle__switch">
+              <input type="checkbox" formControlName="showPrice" />
               <span class="offer-toggle__slider"></span>
             </span>
           </span>

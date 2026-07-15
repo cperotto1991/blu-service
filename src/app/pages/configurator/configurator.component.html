@@ -6,10 +6,19 @@
       <h1>{{ product.name }}</h1>
       <p>{{ product.shortDescription }}</p>
 
-      <div class="total-box">
-        <span>Totale stimato</span>
-        <strong>{{ total() | currency: "EUR" : "symbol" : "1.0-0" }}</strong>
-      </div>
+      @if (canSeeProductPrice()) {
+        <div class="total-box">
+          <span>Totale stimato</span>
+          <strong>{{ total() | currency: "EUR" : "symbol" : "1.0-0" }}</strong>
+
+          @if (canSeeSupplierPrice()) {
+            <small>
+              Prezzo collaboratore:
+              {{ product.supplierPrice | currency: "EUR" : "symbol" : "1.0-0" }}
+            </small>
+          }
+        </div>
+      }
     </aside>
 
     <section class="steps">
@@ -32,11 +41,11 @@
             >
               <strong>{{ option.label }}</strong>
               <span>
-                @if (option.priceDelta > 0) {
+                @if (canSeeProductPrice() && option.priceDelta > 0) {
                   +{{
                     option.priceDelta | currency: "EUR" : "symbol" : "1.0-0"
                   }}
-                } @else {
+                } @else if (canSeeProductPrice()) {
                   Incluso
                 }
               </span>

@@ -97,7 +97,7 @@ export class CatalogComponent {
     >();
 
     for (const product of this.catalogService.products()) {
-      if (this.normalizeSlug(product.categorySlug) !== categorySlug) {
+      if (this.normalizeSlug(product.category) !== categorySlug) {
         continue;
       }
 
@@ -106,7 +106,6 @@ export class CatalogComponent {
         ? this.formatLabelFromSlug(product.groupId)
         : 'Altri';
       const subcategorySlug =
-        this.normalizeSlug(product.subcategorySlug) ||
         this.normalizeSlug(product.subcategory);
 
       if (!subcategorySlug) {
@@ -153,7 +152,7 @@ export class CatalogComponent {
 
     if (categorySlug) {
       products = products.filter(
-        (product) => this.normalizeSlug(product.categorySlug) === categorySlug,
+        (product) => this.normalizeSlug(product.category) === categorySlug,
       );
     }
 
@@ -169,9 +168,7 @@ export class CatalogComponent {
 
     if (subcategory) {
       products = products.filter(
-        (product) =>
-          this.normalizeSlug(product.subcategorySlug) === subcategory ||
-          this.normalizeSlug(product.subcategory) === subcategory,
+        (product) => this.normalizeSlug(product.subcategory) === subcategory,
       );
     }
 

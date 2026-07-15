@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:csr": "ng serve -c local",
     "start:proxy": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "build:swa": "ng build && node -e \"const fs=require('fs'); const src='dist/blu-service-shop/browser/index.csr.html'; const dst='dist/blu-service-shop/browser/index.html'; if(!fs.existsSync(src)){ throw new Error('Missing '+src); } fs.copyFileSync(src,dst); console.log('Created '+dst);\"",

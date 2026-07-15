@@ -6,7 +6,7 @@ import {
   signal,
   PLATFORM_ID,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CatalogService } from '../../core/services/catalog.service';
 import { HomeService } from '../../core/services/home.service';
 import {
@@ -17,6 +17,7 @@ import {
 } from '../../core/models/home.models';
 import { Product } from '../../core/models/product.model';
 import { isPlatformBrowser } from '@angular/common';
+import { PriceVisibilityService } from '../../core/services/price-visibility.service';
 
 @Component({
   selector: 'app-home',
@@ -28,10 +29,14 @@ import { isPlatformBrowser } from '@angular/common';
 export class HomeComponent {
   private readonly catalogService = inject(CatalogService);
   private readonly homeService = inject(HomeService);
+  private readonly priceVisibilityService = inject(PriceVisibilityService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly activeHeroSlide = signal(0);
   readonly isHeroCarouselPaused = signal(false);
   readonly activeSpotlightSlide = signal(0);
+  readonly authErrorMessage = signal('');
   readonly heroPromoText = 'PROMO dal 3 al 30 Giugno';
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
@@ -80,18 +85,19 @@ export class HomeComponent {
   readonly heroSlides = computed<HeroSlide[]>(() => {
     const slides = this.homeService
       .offers()
-      .slice(0, 5)
       .map((offer) => this.toHeroSlide(offer));
     const fallbackSlide: HeroSlide = {
       id: 0,
       code: '',
-      title: 'BLU Service',
-      shortDescription: 'Scopri le offerte disponibili nel catalogo.',
+      title: 'Nessuna offerta attiva',
+      shortDescription: 'Le offerte reali appariranno qui appena disponibili.',
       imageUrl: this.heroImage(),
-      discountPercent: 10,
-      discountedPrice: 490,
-      basePrice: 550,
-      savings: 60,
+      showPrice: false,
+      supplierPrice: undefined,
+      discountPercent: 0,
+      discountedPrice: 0,
+      basePrice: 0,
+      savings: 0,
     };
 
     const heroSlides: HeroSlide[] =
@@ -99,6 +105,8 @@ export class HomeComponent {
 
     return heroSlides;
   });
+
+  readonly hasHeroOffers = computed(() => this.homeService.offers().length > 0);
 
   readonly activeHeroSlideIndex = computed(() => {
     const slideCount = this.heroSlides().length;
@@ -118,6 +126,28 @@ export class HomeComponent {
   );
 
   constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      if (params.get('authError') !== 'not-admin') {
+        return;
+      }
+
+      this.authErrorMessage.set(
+        "Accesso negato: questo account non è abilitato all'area admin.",
+      );
+
+      void this.router.navigate([], {
+        queryParams: { authError: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+
+      if (this.isBrowser) {
+        window.setTimeout(() => {
+          this.authErrorMessage.set('');
+        }, 7000);
+      }
+    });
+
     if (!this.isBrowser) {
       return;
     }
@@ -195,6 +225,11 @@ export class HomeComponent {
       name: product.name,
       shortDescription: product.shortDescription,
       imageUrl: product.imageUrl,
+      showPrice: product.showPrice !== false,
+      supplierPrice:
+        typeof product.supplierPrice === 'number'
+          ? product.supplierPrice
+          : undefined,
       discountPercent,
       discountedPrice,
       basePrice,
@@ -211,11 +246,33 @@ export class HomeComponent {
       title: offer.name,
       shortDescription: offer.shortDescription,
       imageUrl: offer.imageUrl,
+      showPrice: offer.showPrice,
+      supplierPrice: offer.supplierPrice,
       discountPercent: offer.discountPercent,
       discountedPrice: offer.discountedPrice,
       basePrice: offer.basePrice,
       savings: offer.savings,
     };
+  }
+
+  canSeeSlidePrice(slide: HeroSlide): boolean {
+    return this.priceVisibilityService.canSeePriceForFlag(slide.showPrice);
+  }
+
+  canSeeOfferPrice(offer: HomeOfferCard): boolean {
+    return this.priceVisibilityService.canSeePriceForFlag(offer.showPrice);
+  }
+
+  canSeeSlideSupplierPrice(slide: HeroSlide): boolean {
+    return this.priceVisibilityService.canSeeSupplierPrice({
+      supplierPrice: slide.supplierPrice,
+    });
+  }
+
+  canSeeOfferSupplierPrice(offer: HomeOfferCard): boolean {
+    return this.priceVisibilityService.canSeeSupplierPrice({
+      supplierPrice: offer.supplierPrice,
+    });
   }
 
   formatPrice(value: number): string {

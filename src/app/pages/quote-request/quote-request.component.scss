@@ -76,6 +76,18 @@
   }
 }
 
+.quote-item__prices {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+
+  small {
+    color: #9a5b0e;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+}
+
 .quote-item__content {
   span {
     color: #2563eb;

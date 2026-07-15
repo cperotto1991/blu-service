@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogService } from '../../core/services/catalog.service';
+import { PriceVisibilityService } from '../../core/services/price-visibility.service';
 
 @Component({
   selector: 'app-configurator',
@@ -14,6 +15,7 @@ import { CatalogService } from '../../core/services/catalog.service';
 export class ConfiguratorComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly catalogService = inject(CatalogService);
+  private readonly priceVisibilityService = inject(PriceVisibilityService);
 
   step = signal(0);
   quantity = signal(1);
@@ -51,6 +53,14 @@ export class ConfiguratorComponent {
       this.quantity(),
     );
   });
+
+  readonly canSeeProductPrice = computed(() =>
+    this.priceVisibilityService.canSeeProductPrice(this.product()),
+  );
+
+  readonly canSeeSupplierPrice = computed(() =>
+    this.priceVisibilityService.canSeeSupplierPrice(this.product()),
+  );
 
   selectOption(groupId: string, optionId: string): void {
     this.selectedOptions.update((current) => ({

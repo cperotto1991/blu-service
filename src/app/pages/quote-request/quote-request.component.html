@@ -20,9 +20,23 @@
               <p>{{ product.shortDescription }}</p>
             </div>
 
-            <strong>
-              {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
-            </strong>
+            @if (canSeeProductPrice(product)) {
+              <div class="quote-item__prices">
+                <strong>
+                  {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+                </strong>
+
+                @if (canSeeSupplierPrice(product)) {
+                  <small>
+                    Prezzo collaboratore:
+                    {{
+                      product.supplierPrice
+                        | currency: "EUR" : "symbol" : "1.0-0"
+                    }}
+                  </small>
+                }
+              </div>
+            }
 
             <button
               type="button"
@@ -36,16 +50,18 @@
       </div>
 
       <aside class="quote-summary">
-        <span>Totale stimato</span>
+        @if (canSeeTotal()) {
+          <span>Totale stimato</span>
 
-        <strong>
-          {{ selectedTotal() | currency: "EUR" : "symbol" : "1.0-0" }}
-        </strong>
+          <strong>
+            {{ selectedTotal() | currency: "EUR" : "symbol" : "1.0-0" }}
+          </strong>
 
-        <p>
-          Il prezzo è indicativo. La configurazione definitiva verrà confermata
-          in negozio.
-        </p>
+          <p>
+            Il prezzo è indicativo. La configurazione definitiva verrà
+            confermata in negozio.
+          </p>
+        }
 
         <a (click)="goBack()" class="secondary-btn"> Torna al catalogo </a>
 
@@ -53,14 +69,15 @@
           Svuota configurazione
         </button>
 
-        <button
-          type="button"
+        <a
           class="primary-btn"
-          (click)="requestQuote()"
-          aria-label="Richiedi preventivo per la configurazione attuale"
+          href="https://www.bluservice.eu/contatti/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Contattaci"
         >
-          Richiedi preventivo
-        </button>
+          Contattaci
+        </a>
       </aside>
     </div>
   } @else {

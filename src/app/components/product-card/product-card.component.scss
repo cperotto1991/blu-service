@@ -101,6 +101,23 @@
     font-weight: 950;
   }
 
+  &__price-wrap {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  &__supplier-price {
+    color: #9a5b0e;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  &__price--hidden {
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
   &__actions {
     display: flex;
     gap: 10px;

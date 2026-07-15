@@ -12,10 +12,10 @@
       >
       <span aria-hidden="true">|</span>
       <a
-        href="https://www.bluservice.eu/assistenza-elettrodomestici/"
+        href="https://www.bluservice.eu/contatti/"
         target="_blank"
         rel="noopener noreferrer"
-        >Assistenza</a
+        >CONTATTACI</a
       >
     </div>
 
@@ -81,7 +81,11 @@
             <div class="user-menu__info">
               <strong>{{ user()?.email }}</strong>
               <span>{{
-                isAdmin() ? "Admin attivo" : "Utente autenticato"
+                isAdmin()
+                  ? "Admin attivo"
+                  : isCollaborator()
+                    ? "Collaboratore attivo"
+                    : "Utente autenticato"
               }}</span>
             </div>
 
@@ -103,13 +107,30 @@
               </a>
             }
 
-            <button
-              type="button"
-              class="user-menu__item user-menu__item--button"
-              (click)="signOut()"
-            >
-              Logout
-            </button>
+            @if (isCollaborator()) {
+              <button
+                type="button"
+                class="user-menu__item user-menu__item--button"
+                [class.user-menu__item--active]="isCollaboratorGuestMode()"
+                (click)="toggleCollaboratorGuestMode()"
+              >
+                @if (isCollaboratorGuestMode()) {
+                  Disattiva modalità ospite
+                } @else {
+                  Attiva modalità ospite
+                }
+              </button>
+            }
+
+            @if (!isCollaborator()) {
+              <button
+                type="button"
+                class="user-menu__item user-menu__item--button"
+                (click)="signOut()"
+              >
+                Logout
+              </button>
+            }
           }
         </div>
       }

@@ -17,15 +17,24 @@
         <h2>{{ product.name }}</h2>
         <p>{{ product.shortDescription }}</p>
 
-        <div class="price">
-          <span>Da</span>
-          <strong>{{
-            product.basePrice | currency: "EUR" : "symbol" : "1.0-0"
-          }}</strong>
-          @if (product.discountPercent) {
-            <em>-{{ product.discountPercent }}%</em>
+        @if (canSeeOfferPrice(product)) {
+          <div class="price">
+            <span>Da</span>
+            <strong>{{
+              product.basePrice | currency: "EUR" : "symbol" : "1.0-0"
+            }}</strong>
+            @if (product.discountPercent) {
+              <em>-{{ product.discountPercent }}%</em>
+            }
+          </div>
+
+          @if (canSeeSupplierPrice(product)) {
+            <div class="supplier-price">
+              Prezzo collaboratore:
+              {{ product.supplierPrice | currency: "EUR" : "symbol" : "1.0-0" }}
+            </div>
           }
-        </div>
+        }
 
         <a [routerLink]="['/configura', product.id]">Configura offerta</a>
       </div>

@@ -20,28 +20,39 @@ import {
   getFirestore,
 } from 'firebase/firestore';
 import { getFirebaseApp, hasFirebaseConfig } from '../firebase/firebase.config';
-import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FirebaseAuthService {
+  private readonly unauthorizedMessage =
+    'Account non autorizzato. Contatta l’amministratore per l’abilitazione.';
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private readonly userSignal = signal<User | null>(null);
   private readonly readySignal = signal(false);
   private readonly adminSignal = signal(false);
-  private readonly adminEmails = (environment.adminEmails ?? []).map((email) =>
-    email.toLowerCase().trim(),
-  );
+  private readonly collaboratorSignal = signal(false);
+  private readonly authErrorSignal = signal('');
 
   readonly user = this.userSignal.asReadonly();
+  readonly authError = this.authErrorSignal.asReadonly();
   readonly isReady = this.readySignal.asReadonly();
   readonly isLoggedIn = computed(() => !!this.userSignal());
   readonly isAdmin = computed(() => this.isLoggedIn() && this.adminSignal());
+  readonly isCollaborator = computed(
+    () => this.isLoggedIn() && this.collaboratorSignal(),
+  );
+  readonly isPrivileged = computed(
+    () => this.isAdmin() || this.isCollaborator(),
+  );
 
   constructor() {
+    if (this.isBrowser) {
+      this.authErrorSignal.set(sessionStorage.getItem('blu-auth-error') ?? '');
+    }
+
     if (!this.isBrowser || !hasFirebaseConfig() || !getFirebaseApp()) {
       this.readySignal.set(true);
       return;
@@ -55,13 +66,19 @@ export class FirebaseAuthService {
 
       if (!user) {
         this.adminSignal.set(false);
+        this.collaboratorSignal.set(false);
         this.readySignal.set(true);
         return;
       }
 
       this.adminSignal.set(false);
+      this.collaboratorSignal.set(false);
       this.readySignal.set(false);
-      void this.loadAdminState(user);
+      void this.loadRoleState(user).then((isAuthorized) => {
+        if (!isAuthorized) {
+          void this.handleUnauthorizedAuthenticatedUser(auth);
+        }
+      });
     });
   }
 
@@ -73,7 +90,8 @@ export class FirebaseAuthService {
     }
 
     const auth = getAuth(getFirebaseApp()!);
-    await signInWithEmailAndPassword(auth, email, password);
+    const normalizedEmail = email.trim().toLowerCase();
+    await signInWithEmailAndPassword(auth, normalizedEmail, password);
   }
 
   async signInWithGoogle(): Promise<void> {
@@ -83,12 +101,20 @@ export class FirebaseAuthService {
       );
     }
 
+    this.clearAuthError();
+
     const auth = getAuth(getFirebaseApp()!);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
 
     try {
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      const isAuthorized = await this.loadRoleState(credential.user);
+
+      if (!isAuthorized) {
+        await this.handleUnauthorizedAuthenticatedUser(auth);
+        throw new Error(this.unauthorizedMessage);
+      }
     } catch (error) {
       const code =
         typeof error === 'object' && error && 'code' in error
@@ -114,35 +140,85 @@ export class FirebaseAuthService {
     }
 
     this.adminSignal.set(false);
+    this.collaboratorSignal.set(false);
     await signOut(getAuth(getFirebaseApp()!));
   }
 
-  private async loadAdminState(user: User): Promise<void> {
-    if (!hasFirebaseConfig() || !getFirebaseApp()) {
-      this.adminSignal.set(false);
-      this.readySignal.set(true);
-      return;
+  consumeAuthError(): string {
+    const message = this.authErrorSignal();
+
+    if (message) {
+      this.clearAuthError();
     }
 
-    const userEmail = user.email?.toLowerCase().trim();
-    if (userEmail && this.adminEmails.includes(userEmail)) {
-      this.adminSignal.set(true);
+    return message;
+  }
+
+  private async loadRoleState(user: User): Promise<boolean> {
+    if (!hasFirebaseConfig() || !getFirebaseApp()) {
+      this.adminSignal.set(false);
+      this.collaboratorSignal.set(false);
       this.readySignal.set(true);
-      return;
+      return false;
     }
 
     try {
       const firestore = getFirestore(getFirebaseApp()!);
-      const adminRef = doc(firestore, 'admins', user.uid);
-      const adminSnapshot = await getDocFromServer(adminRef).catch(() =>
-        getDoc(adminRef),
+      const userRoleRef = doc(firestore, 'users', user.uid);
+      const userRoleSnapshot = await getDocFromServer(userRoleRef).catch(() =>
+        getDoc(userRoleRef),
       );
-      this.adminSignal.set(adminSnapshot.exists());
+
+      if (!userRoleSnapshot.exists()) {
+        this.adminSignal.set(false);
+        this.collaboratorSignal.set(false);
+        return false;
+      }
+
+      const userRoleData = userRoleSnapshot.data() as { role?: unknown };
+      const role = String(userRoleData.role ?? '')
+        .trim()
+        .toUpperCase();
+
+      const isAdmin = role === 'ADMIN';
+      const isCollaborator =
+        role === 'COLLABORATORE' ||
+        role === 'COLLABBORATORE' ||
+        role === 'COLLABORATOR';
+
+      this.adminSignal.set(isAdmin);
+      this.collaboratorSignal.set(isCollaborator);
+      return isAdmin || isCollaborator;
     } catch (error) {
-      console.error('Impossibile verificare ruolo admin:', error);
+      console.error('Impossibile verificare ruolo utente:', error);
       this.adminSignal.set(false);
+      this.collaboratorSignal.set(false);
+      return false;
     } finally {
       this.readySignal.set(true);
+    }
+  }
+
+  private async handleUnauthorizedAuthenticatedUser(
+    auth = getAuth(getFirebaseApp()!),
+  ): Promise<void> {
+    this.authErrorSignal.set(this.unauthorizedMessage);
+
+    if (this.isBrowser) {
+      sessionStorage.setItem('blu-auth-error', this.unauthorizedMessage);
+    }
+
+    this.userSignal.set(null);
+    this.adminSignal.set(false);
+    this.collaboratorSignal.set(false);
+    await signOut(auth);
+  }
+
+  private clearAuthError(): void {
+    this.authErrorSignal.set('');
+
+    if (this.isBrowser) {
+      sessionStorage.removeItem('blu-auth-error');
     }
   }
 }
