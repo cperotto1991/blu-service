@@ -343,15 +343,20 @@ export class FirebaseDataService {
     file: File,
   ): Promise<string> {
     const extension = file.name.includes('.')
-      ? (file.name.split('.').pop() ?? 'jpg')
+      ? (file.name.split('.').pop() ?? 'jpg').toLowerCase()
       : 'jpg';
-    const safeName = file.name
+    const originalName = file.name
+      .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9.]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/\.[^.]+$/, '');
+    const safeName = originalName
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80);
+    const fileName = `${Date.now()}-${safeName || 'image'}.${extension}`;
     const storageRef = ref(
       storage,
-      `products/${product.code.trim().toUpperCase()}/${Date.now()}-${safeName}.${extension}`,
+      `products-images/${product.code.trim().toUpperCase()}/${fileName}`,
     );
 
     await uploadBytes(storageRef, file);

@@ -1130,6 +1130,18 @@ export class AdminComponent {
       return 'Finestra di login Google chiusa prima del completamento.';
     }
 
+    if (code === 'storage/unauthorized') {
+      return 'Non hai i permessi per caricare immagini su Firebase Storage. Verifica che il tuo utente abbia ruolo ADMIN in users/{uid}.';
+    }
+
+    if (code === 'storage/canceled') {
+      return 'Upload immagine annullato.';
+    }
+
+    if (code === 'storage/unknown') {
+      return 'Errore durante l\'upload immagine su Firebase Storage.';
+    }
+
     if (error instanceof Error) {
       return error.message;
     }

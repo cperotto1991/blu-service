@@ -122,15 +122,13 @@
               </button>
             }
 
-            @if (!isCollaborator()) {
-              <button
-                type="button"
-                class="user-menu__item user-menu__item--button"
-                (click)="signOut()"
-              >
-                Logout
-              </button>
-            }
+            <button
+              type="button"
+              class="user-menu__item user-menu__item--button"
+              (click)="signOut()"
+            >
+              Logout
+            </button>
           }
         </div>
       }

@@ -8,10 +8,16 @@ service firebase.storage {
 
     function isAdmin() {
       return isSignedIn()
-        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
     }
 
     match /products/{productId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /products-images/{productId}/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin();
     }

@@ -1,0 +1,63 @@
+[debug] [2026-07-15T15:10:10.867Z] ----------------------------------------------------------------------
+[debug] [2026-07-15T15:10:10.871Z] Command:       C:\nvm4w\nodejs\node.exe C:\Users\Chiar\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only storage --project blu-service-shop
+[debug] [2026-07-15T15:10:10.871Z] CLI Version:   13.34.0
+[debug] [2026-07-15T15:10:10.871Z] Platform:      win32
+[debug] [2026-07-15T15:10:10.871Z] Node Version:  v24.14.0
+[debug] [2026-07-15T15:10:10.871Z] Time:          Wed Jul 15 2026 17:10:10 GMT+0200 (Ora legale dell’Europa centrale)
+[debug] [2026-07-15T15:10:10.871Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-15T15:10:11.037Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-15T15:10:11.037Z] > authorizing via signed-in user (perottochiara@live.it)
+[debug] [2026-07-15T15:10:11.037Z] [iam] checking project blu-service-shop for permissions ["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2026-07-15T15:10:11.038Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:11.038Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:11.039Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop:testIamPermissions [none]
+[debug] [2026-07-15T15:10:11.039Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop:testIamPermissions x-goog-quota-user=projects/blu-service-shop
+[debug] [2026-07-15T15:10:11.039Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2026-07-15T15:10:11.959Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop:testIamPermissions 200
+[debug] [2026-07-15T15:10:11.959Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop:testIamPermissions {"permissions":["firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[info] 
+[info] === Deploying to 'blu-service-shop'...
+[info] 
+[info] i  deploying storage 
+[info] i  storage: ensuring required API firebasestorage.googleapis.com is enabled... 
+[debug] [2026-07-15T15:10:11.964Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:11.964Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:11.964Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/blu-service-shop/services/firebasestorage.googleapis.com [none]
+[debug] [2026-07-15T15:10:11.964Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/blu-service-shop/services/firebasestorage.googleapis.com x-goog-quota-user=projects/blu-service-shop
+[debug] [2026-07-15T15:10:13.081Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/blu-service-shop/services/firebasestorage.googleapis.com 200
+[debug] [2026-07-15T15:10:13.081Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/blu-service-shop/services/firebasestorage.googleapis.com [omitted]
+[info] +  storage: required API firebasestorage.googleapis.com is enabled 
+[debug] [2026-07-15T15:10:13.082Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:13.082Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:13.083Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/blu-service-shop/defaultBucket [none]
+[debug] [2026-07-15T15:10:13.998Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/blu-service-shop/defaultBucket 200
+[debug] [2026-07-15T15:10:13.998Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/blu-service-shop/defaultBucket {"name":"projects/blu-service-shop/defaultBucket","location":"EUROPE-WEST3","bucket":{"name":"projects/blu-service-shop/buckets/blu-service-shop.firebasestorage.app"},"storageClass":"REGIONAL"}
+[info] i  firebase.storage: checking firebase.storage.rules for compilation errors... 
+[debug] [2026-07-15T15:10:14.000Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:14.000Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:14.001Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/blu-service-shop:test [none]
+[debug] [2026-07-15T15:10:14.001Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/blu-service-shop:test [omitted]
+[debug] [2026-07-15T15:10:14.420Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/blu-service-shop:test 200
+[debug] [2026-07-15T15:10:14.420Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/blu-service-shop:test {}
+[info] +  firebase.storage: rules file firebase.storage.rules compiled successfully 
+[debug] [2026-07-15T15:10:14.421Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:14.421Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:14.421Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/blu-service-shop/releases pageSize=10&pageToken=
+[debug] [2026-07-15T15:10:15.180Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/blu-service-shop/releases 200
+[debug] [2026-07-15T15:10:15.180Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/blu-service-shop/releases {"releases":[{"name":"projects/blu-service-shop/releases/cloud.firestore","rulesetName":"projects/blu-service-shop/rulesets/9cafda43-9dbc-41ef-b649-d9c6b0523e38","createTime":"2026-06-27T20:37:27.502856Z","updateTime":"2026-07-15T12:59:04.624778Z"},{"name":"projects/blu-service-shop/releases/firebase.storage/blu-service-shop.firebasestorage.app","rulesetName":"projects/blu-service-shop/rulesets/e145dc48-74c5-4d23-b14c-d87beaded7f5","createTime":"2026-07-15T15:02:52.961029Z","updateTime":"2026-07-15T15:02:52.961029Z"}]}
+[debug] [2026-07-15T15:10:15.197Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:15.197Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:15.197Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/blu-service-shop/rulesets/e145dc48-74c5-4d23-b14c-d87beaded7f5 [none]
+[debug] [2026-07-15T15:10:15.638Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/blu-service-shop/rulesets/e145dc48-74c5-4d23-b14c-d87beaded7f5 200
+[debug] [2026-07-15T15:10:15.639Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/blu-service-shop/rulesets/e145dc48-74c5-4d23-b14c-d87beaded7f5 [omitted]
+[debug] [2026-07-15T15:10:15.640Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:15.641Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:15.641Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop [none]
+[debug] [2026-07-15T15:10:15.864Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop 200
+[debug] [2026-07-15T15:10:15.864Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/blu-service-shop {"projectNumber":"416200794551","projectId":"blu-service-shop","lifecycleState":"ACTIVE","name":"blu-service-shop","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-06-27T20:14:27.508Z"}
+[debug] [2026-07-15T15:10:15.865Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:15.865Z] Checked if tokens are valid: true, expires at: 1784131698769
+[debug] [2026-07-15T15:10:15.865Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/416200794551:getIamPolicy [none]
+[debug] [2026-07-15T15:10:16.558Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/416200794551:getIamPolicy 200
+[debug] [2026-07-15T15:10:16.558Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/416200794551:getIamPolicy {"version":1,"etag":"BwZWp53Zr8Q=","bindings":[{"role":"roles/firebase.managementServiceAgent","members":["serviceAccount:service-416200794551@gcp-sa-firebase.iam.gserviceaccount.com"]},{"role":"roles/firebase.sdkAdminServiceAgent","members":["serviceAccount:firebase-adminsdk-fbsvc@blu-service-shop.iam.gserviceaccount.com"]},{"role":"roles/firebaseauth.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@blu-service-shop.iam.gserviceaccount.com"]},{"role":"roles/firebaserules.system","members":["serviceAccount:service-416200794551@firebase-rules.iam.gserviceaccount.com"]},{"role":"roles/firebasestorage.serviceAgent","members":["serviceAccount:service-416200794551@gcp-sa-firebasestorage.iam.gserviceaccount.com"]},{"role":"roles/firestore.serviceAgent","members":["serviceAccount:service-416200794551@gcp-sa-firestore.iam.gserviceaccount.com"]},{"role":"roles/iam.serviceAccountTokenCreator","members":["serviceAccount:firebase-adminsdk-fbsvc@blu-service-shop.iam.gserviceaccount.com"]},{"role":"roles/owner","members":["user:gaiasoftwarestudio@gmail.com"]},{"role":"roles/storage.admin","members":["serviceAccount:firebase-adminsdk-fbsvc@blu-service-shop.iam.gserviceaccount.com"]}]}
