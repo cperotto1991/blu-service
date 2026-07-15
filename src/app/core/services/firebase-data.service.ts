@@ -550,9 +550,7 @@ export class FirebaseDataService {
       description: String(data.description ?? ''),
       basePrice: Number(data.basePrice ?? 0),
       supplierPrice:
-        typeof data.supplierPrice === 'number'
-          ? data.supplierPrice
-          : undefined,
+        typeof data.supplierPrice === 'number' ? data.supplierPrice : undefined,
       finalPrice:
         typeof data.finalPrice === 'number' ? data.finalPrice : undefined,
       imageUrl: String(data.imageUrl ?? ''),

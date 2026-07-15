@@ -407,7 +407,7 @@ export class AdminComponent {
         ? this.clampDiscount(product.discountPercent ?? 10)
         : 0;
       const nextOfferType = nextIsOffer
-        ? (product.offerType?.trim() || 'Promo')
+        ? product.offerType?.trim() || 'Promo'
         : undefined;
       const updatedProduct: Product = {
         ...product,
@@ -1012,7 +1012,9 @@ export class AdminComponent {
       isActive: value.isActive !== false,
       isOffer: Boolean(value.isOffer),
       offerType:
-        typeof value.offerType === 'string' ? value.offerType.trim() : offerType,
+        typeof value.offerType === 'string'
+          ? value.offerType.trim()
+          : offerType,
       offerLabel:
         typeof value.offerLabel === 'string'
           ? value.offerLabel
@@ -1020,7 +1022,7 @@ export class AdminComponent {
             ? value.offerType.trim()
             : offerType
               ? this.getOfferTypeLabel(offerType)
-            : undefined,
+              : undefined,
       discountPercent: normalizedDiscount,
       supplierPrice:
         typeof value.supplierPrice === 'number'
