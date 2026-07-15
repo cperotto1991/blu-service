@@ -54,6 +54,25 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'privacy',
+        loadComponent: () =>
+          import('./pages/privacy/privacy.component').then(
+            (m) => m.PrivacyComponent,
+          ),
+      },
+      {
+        path: 'cookie',
+        loadComponent: () =>
+          import('./pages/cookie/cookie.component').then(
+            (m) => m.CookieComponent,
+          ),
+      },
+      {
+        path: 'termini',
+        loadComponent: () =>
+          import('./pages/terms/terms.component').then((m) => m.TermsComponent),
+      },
+      {
         path: 'admin',
         loadComponent: () =>
           import('./pages/admin/admin.component').then((m) => m.AdminComponent),
