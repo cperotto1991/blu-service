@@ -26,7 +26,20 @@
       />
     </label>
 
-    <button type="submit">Accedi</button>
+    <div class="auth-actions">
+      <button type="submit">Accedi</button>
+      <button
+        type="button"
+        class="google"
+        [disabled]="isGoogleSigningIn()"
+        (click)="signInWithGoogle()"
+      >
+        <span *ngIf="!isGoogleSigningIn(); else googleLoading">
+          Accedi con Google
+        </span>
+        <ng-template #googleLoading>Accesso Google...</ng-template>
+      </button>
+    </div>
   </form>
 
   <section *ngIf="isLoggedIn() && !isAuthReady()" class="auth-card">

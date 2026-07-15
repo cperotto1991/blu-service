@@ -124,6 +124,7 @@ export class AdminComponent {
   );
   readonly statusMessage = signal('');
   readonly errorMessage = signal('');
+  readonly isGoogleSigningIn = signal(false);
   readonly selectedFileName = signal('Nessun file selezionato');
   readonly bulkFileName = signal('Nessun file selezionato');
   readonly bulkProductsToImport = signal<Product[]>([]);
@@ -225,6 +226,21 @@ export class AdminComponent {
       this.statusMessage.set('Accesso completato.');
     } catch (error) {
       this.errorMessage.set(this.getErrorMessage(error));
+    }
+  }
+
+  async signInWithGoogle(): Promise<void> {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.isGoogleSigningIn.set(true);
+
+    try {
+      await this.authService.signInWithGoogle();
+      this.statusMessage.set('Accesso Google completato.');
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isGoogleSigningIn.set(false);
     }
   }
 
@@ -1046,6 +1062,27 @@ export class AdminComponent {
   }
 
   private getErrorMessage(error: unknown): string {
+    const code =
+      typeof error === 'object' && error && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : '';
+
+    if (code === 'auth/unauthorized-domain') {
+      return 'Dominio non autorizzato su Firebase Auth. Aggiungi questo dominio in Authentication > Settings > Authorized domains.';
+    }
+
+    if (code === 'auth/operation-not-allowed') {
+      return 'Provider Google non abilitato. Attivalo in Firebase Authentication > Sign-in method.';
+    }
+
+    if (code === 'auth/popup-blocked') {
+      return 'Il browser ha bloccato il popup. Riprova oppure consenti i popup per questo sito.';
+    }
+
+    if (code === 'auth/popup-closed-by-user') {
+      return 'Finestra di login Google chiusa prima del completamento.';
+    }
+
     if (error instanceof Error) {
       return error.message;
     }

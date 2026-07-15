@@ -265,6 +265,11 @@ input[readonly] {
   gap: 0.6rem;
 }
 
+.auth-actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
 .scroll-actions {
   position: fixed;
   right: 1rem;
@@ -357,6 +362,13 @@ button:focus-visible,
   background: linear-gradient(135deg, #f67474, #ff9f68);
   color: #2c0606;
   box-shadow: 0 6px 14px rgba(196, 73, 43, 0.24);
+}
+
+.google {
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 4px 12px rgba(8, 24, 38, 0.14);
 }
 
 .small {

@@ -2,12 +2,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import {
+  GoogleAuthProvider,
   User,
   browserLocalPersistence,
   getAuth,
   onAuthStateChanged,
   setPersistence,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  signInWithRedirect,
   signOut,
 } from 'firebase/auth';
 import {
@@ -71,6 +74,38 @@ export class FirebaseAuthService {
 
     const auth = getAuth(getFirebaseApp()!);
     await signInWithEmailAndPassword(auth, email, password);
+  }
+
+  async signInWithGoogle(): Promise<void> {
+    if (!hasFirebaseConfig() || !getFirebaseApp()) {
+      throw new Error(
+        'Firebase non configurato. Inserisci i dati in environment.ts',
+      );
+    }
+
+    const auth = getAuth(getFirebaseApp()!);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      const code =
+        typeof error === 'object' && error && 'code' in error
+          ? String((error as { code?: unknown }).code)
+          : '';
+
+      // Fallback for browsers/environments that block OAuth popups.
+      if (
+        code === 'auth/popup-blocked' ||
+        code === 'auth/operation-not-supported-in-this-environment'
+      ) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+
+      throw error;
+    }
   }
 
   async signOut(): Promise<void> {

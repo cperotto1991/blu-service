@@ -6,8 +6,10 @@
     "start": "ng serve",
     "start:proxy": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
+    "build:swa": "ng build && node -e \"const fs=require('fs'); const src='dist/blu-service-shop/browser/index.csr.html'; const dst='dist/blu-service-shop/browser/index.html'; if(!fs.existsSync(src)){ throw new Error('Missing '+src); } fs.copyFileSync(src,dst); console.log('Created '+dst);\"",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "deploy:swa": "npm run build:swa",
     "serve:ssr:blu-service-shop": "node dist/blu-service-shop/server/server.mjs",
     "products:generate": "node script/generate-products-json.mjs",
     "products:import": "node script/import-products-to-firestore.mjs"
