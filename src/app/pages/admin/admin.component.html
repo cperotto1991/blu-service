@@ -198,36 +198,38 @@
           />
         </label>
 
-        <label *ngIf="productForm.value.isOffer">
+        <label>
+          Prezzo fornitore
+          <input type="number" step="0.01" formControlName="supplierPrice" />
+        </label>
+
+        <label>
           Prezzo finale
           <input
             type="number"
             step="0.01"
             formControlName="finalPrice"
+            [readonly]="!productForm.value.isOffer"
             (input)="onFinalPriceInput()"
           />
         </label>
 
-        <label *ngIf="productForm.value.isOffer">
+        <label>
           Sconto %
           <input
             type="number"
-            step="0.01"
+            step="1"
             min="0"
             max="100"
             formControlName="discountPercent"
+            [readonly]="!productForm.value.isOffer"
             (input)="onDiscountPercentInput()"
           />
         </label>
 
-        <label *ngIf="productForm.value.isOffer">
+        <label>
           Tipo offerta
-          <select formControlName="offerType">
-            <option value="nessuno">Nessuno</option>
-            <option value="promo">Promo</option>
-            <option value="flash">Flash</option>
-            <option value="stagionale">Stagionale</option>
-          </select>
+          <input type="text" formControlName="offerType" [readonly]="!productForm.value.isOffer" />
         </label>
       </div>
 
@@ -360,6 +362,7 @@
               <th>Categoria</th>
               <th>Sottocategoria</th>
               <th>Prezzo base</th>
+              <th>Stato</th>
               <th>Promo</th>
               <th>Azioni</th>
             </tr>
@@ -391,6 +394,18 @@
               <td data-label="Prezzo base">
                 {{ formatPrice(product.basePrice) }}
               </td>
+              <td data-label="Stato">
+                <button
+                  type="button"
+                  class="promo-pill"
+                  [class.promo-pill--on]="product.isActive"
+                  [class.promo-pill--off]="!product.isActive"
+                  [disabled]="isSaving()"
+                  (click)="toggleProductActive(product)"
+                >
+                  {{ product.isActive ? "Attivo" : "Disattivo" }}
+                </button>
+              </td>
               <td data-label="Promo">
                 <button
                   type="button"
@@ -400,7 +415,7 @@
                   [disabled]="isSaving()"
                   (click)="togglePromoForProduct(product)"
                 >
-                  {{ product.isOffer ? "Attiva" : "Disattiva" }}
+                  {{ product.isOffer ? "Disattiva" : "Attiva" }}
                 </button>
               </td>
               <td data-label="Azioni">

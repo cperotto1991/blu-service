@@ -28,7 +28,6 @@ type AdminCategoryOption = {
   subcategories: AdminSubcategoryOption[];
 };
 
-type OfferType = 'nessuno' | 'promo' | 'flash' | 'stagionale';
 type PromoFilter = 'all' | 'with-promo' | 'without-promo';
 
 @Component({
@@ -163,9 +162,10 @@ export class AdminComponent {
     categorySlug: ['', [Validators.required]],
     subcategorySlug: ['', [Validators.required]],
     basePrice: [0, [Validators.required, Validators.min(0)]],
+    supplierPrice: [0, [Validators.min(0)]],
     finalPrice: [0, [Validators.min(0)]],
     isOffer: [false],
-    offerType: ['nessuno' as OfferType],
+    offerType: [''],
     discountPercent: [0, [Validators.min(0), Validators.max(100)]],
     relatedProductCodesText: [''],
   });
@@ -377,16 +377,10 @@ export class AdminComponent {
           : `Prodotto salvato: ${savedProduct.name}`,
       );
       await this.catalogService.loadProducts();
-
-      if (wasEditing) {
-        this.editingProductCode.set(savedProduct.code);
-        this.showProductForm.set(true);
-      } else {
-        this.resetProductForm();
-        this.editingProductCode.set(null);
-        this.showProductForm.set(false);
-        void this.router.navigate(['/admin']);
-      }
+      this.resetProductForm();
+      this.editingProductCode.set(null);
+      this.showProductForm.set(false);
+      void this.router.navigate(['/admin']);
     } catch (error) {
       this.errorMessage.set(this.getErrorMessage(error));
     } finally {
@@ -413,7 +407,7 @@ export class AdminComponent {
         ? this.clampDiscount(product.discountPercent ?? 10)
         : 0;
       const nextOfferType = nextIsOffer
-        ? (product.offerType ?? 'promo')
+        ? (product.offerType?.trim() || 'Promo')
         : undefined;
       const updatedProduct: Product = {
         ...product,
@@ -442,6 +436,31 @@ export class AdminComponent {
     }
   }
 
+  async toggleProductActive(product: Product): Promise<void> {
+    this.errorMessage.set('');
+    this.statusMessage.set('');
+    this.isSaving.set(true);
+
+    try {
+      const nextIsActive = !product.isActive;
+      await this.dataService.saveProduct({
+        ...product,
+        isActive: nextIsActive,
+      });
+
+      await this.catalogService.loadProducts();
+      this.statusMessage.set(
+        nextIsActive
+          ? `Prodotto attivato: ${product.name}`
+          : `Prodotto disattivato: ${product.name}`,
+      );
+    } catch (error) {
+      this.errorMessage.set(this.getErrorMessage(error));
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
   private openEditorWithProduct(product: Product): void {
     this.errorMessage.set('');
     this.statusMessage.set('');
@@ -460,9 +479,10 @@ export class AdminComponent {
       categorySlug: product.categorySlug,
       subcategorySlug: product.subcategorySlug,
       basePrice: product.basePrice,
+      supplierPrice: this.normalizeMoney(product.supplierPrice ?? 0),
       finalPrice: this.getFinalPriceForProduct(product),
       isOffer: product.isOffer,
-      offerType: this.inferOfferType(product.offerLabel),
+      offerType: product.offerType ?? product.offerLabel ?? '',
       discountPercent: product.discountPercent ?? 0,
       relatedProductCodesText: (product.relatedProductCodes ?? []).join(', '),
     });
@@ -681,7 +701,7 @@ export class AdminComponent {
       this.productForm.patchValue(
         {
           isOffer: false,
-          offerType: 'nessuno',
+          offerType: '',
           discountPercent: 0,
           finalPrice: normalizedBase,
         },
@@ -699,7 +719,7 @@ export class AdminComponent {
     this.productForm.patchValue(
       {
         isOffer: true,
-        offerType: 'promo',
+        offerType: (this.productForm.value.offerType ?? '').trim() || 'Promo',
         discountPercent: normalizedDiscount,
         finalPrice: this.calculateDiscountedPrice(
           normalizedBase,
@@ -848,9 +868,10 @@ export class AdminComponent {
     categorySlug: string;
     subcategorySlug: string;
     basePrice: number;
+    supplierPrice: number;
     finalPrice: number;
     isOffer: boolean;
-    offerType: OfferType;
+    offerType: string;
     discountPercent: number;
     relatedProductCodesText: string;
   }): Product {
@@ -860,6 +881,11 @@ export class AdminComponent {
     const normalizedDiscount = this.clampDiscount(value.discountPercent);
     const normalizedCategorySlug = value.categorySlug.trim();
     const normalizedSubcategorySlug = value.subcategorySlug.trim();
+    const existingProduct = this.editingProductCode()
+      ? this.products().find(
+          (product) => product.code === this.editingProductCode(),
+        )
+      : null;
 
     return {
       id: this.createNumericIdFromCode(normalizedCode),
@@ -874,20 +900,19 @@ export class AdminComponent {
       shortDescription: value.shortDescription.trim(),
       description: value.description.trim(),
       basePrice: normalizedBasePrice,
+      supplierPrice: this.normalizeMoney(value.supplierPrice),
       finalPrice:
         value.isOffer && normalizedDiscount > 0
           ? Math.min(normalizedBasePrice, normalizedFinalPrice)
           : undefined,
       imageUrl: this.currentImageUrl,
       tags: [],
+      isActive: existingProduct?.isActive ?? true,
       isOffer: value.isOffer,
       offerLabel: value.isOffer
         ? this.getOfferTypeLabel(value.offerType)
         : undefined,
-      offerType:
-        value.isOffer && value.offerType !== 'nessuno'
-          ? value.offerType
-          : undefined,
+      offerType: value.isOffer ? value.offerType.trim() || 'Promo' : undefined,
       discountPercent:
         value.isOffer && normalizedDiscount > 0
           ? normalizedDiscount
@@ -984,15 +1009,23 @@ export class AdminComponent {
           : undefined,
       imageUrl: String(value.imageUrl ?? ''),
       tags: Array.isArray(value.tags) ? value.tags.map(String) : [],
+      isActive: value.isActive !== false,
       isOffer: Boolean(value.isOffer),
-      offerType,
+      offerType:
+        typeof value.offerType === 'string' ? value.offerType.trim() : offerType,
       offerLabel:
         typeof value.offerLabel === 'string'
           ? value.offerLabel
-          : offerType
-            ? this.getOfferTypeLabel(offerType)
+          : typeof value.offerType === 'string' && value.offerType.trim()
+            ? value.offerType.trim()
+            : offerType
+              ? this.getOfferTypeLabel(offerType)
             : undefined,
       discountPercent: normalizedDiscount,
+      supplierPrice:
+        typeof value.supplierPrice === 'number'
+          ? this.normalizeMoney(value.supplierPrice)
+          : undefined,
       relatedProductCodes: Array.isArray(value.relatedProductCodes)
         ? value.relatedProductCodes.map((item) => String(item).toUpperCase())
         : [],
@@ -1056,7 +1089,7 @@ export class AdminComponent {
       return 0;
     }
 
-    return Math.max(0, Math.min(100, Math.round(value * 100) / 100));
+    return Math.max(0, Math.min(100, Math.round(value)));
   }
 
   private normalizeMoney(value: number): number {
@@ -1067,35 +1100,8 @@ export class AdminComponent {
     return Math.max(0, Math.round(value * 100) / 100);
   }
 
-  private getOfferTypeLabel(type: OfferType): string {
-    switch (type) {
-      case 'nessuno':
-        return '';
-      case 'flash':
-        return 'Offerta flash';
-      case 'stagionale':
-        return 'Offerta stagionale';
-      default:
-        return 'Promo';
-    }
-  }
-
-  private inferOfferType(label: string | undefined): OfferType {
-    const normalized = label?.toLowerCase().trim() ?? '';
-
-    if (!normalized) {
-      return 'nessuno';
-    }
-
-    if (normalized.includes('flash')) {
-      return 'flash';
-    }
-
-    if (normalized.includes('stagionale')) {
-      return 'stagionale';
-    }
-
-    return 'promo';
+  private getOfferTypeLabel(type: string): string {
+    return type.trim();
   }
 
   private getFinalPriceForProduct(product: Product): number {
@@ -1125,9 +1131,10 @@ export class AdminComponent {
       categorySlug: defaultCategory?.slug ?? '',
       subcategorySlug: defaultSubcategory?.slug ?? '',
       basePrice: 0,
+      supplierPrice: 0,
       finalPrice: 0,
       isOffer: false,
-      offerType: 'nessuno',
+      offerType: '',
       discountPercent: 0,
       relatedProductCodesText: '',
     });

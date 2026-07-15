@@ -549,17 +549,18 @@ export class FirebaseDataService {
       shortDescription: String(data.shortDescription ?? ''),
       description: String(data.description ?? ''),
       basePrice: Number(data.basePrice ?? 0),
+      supplierPrice:
+        typeof data.supplierPrice === 'number'
+          ? data.supplierPrice
+          : undefined,
       finalPrice:
         typeof data.finalPrice === 'number' ? data.finalPrice : undefined,
       imageUrl: String(data.imageUrl ?? ''),
       tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+      isActive: data.isActive !== false,
       isOffer: Boolean(data.isOffer),
       offerType:
-        data.offerType === 'promo' ||
-        data.offerType === 'flash' ||
-        data.offerType === 'stagionale'
-          ? data.offerType
-          : undefined,
+        typeof data.offerType === 'string' ? data.offerType.trim() : undefined,
       offerLabel:
         typeof data.offerLabel === 'string'
           ? data.offerLabel
@@ -602,16 +603,19 @@ export class FirebaseDataService {
       shortDescription: String(product.shortDescription ?? ''),
       description: String(product.description ?? ''),
       basePrice: Number(product.basePrice ?? 0),
+      supplierPrice:
+        typeof product.supplierPrice === 'number'
+          ? product.supplierPrice
+          : undefined,
       finalPrice:
         typeof product.finalPrice === 'number' ? product.finalPrice : undefined,
       imageUrl: String(product.imageUrl ?? ''),
       tags: Array.isArray(product.tags) ? product.tags.map(String) : [],
+      isActive: product.isActive !== false,
       isOffer: Boolean(product.isOffer),
       offerType:
-        product.offerType === 'promo' ||
-        product.offerType === 'flash' ||
-        product.offerType === 'stagionale'
-          ? product.offerType
+        typeof product.offerType === 'string'
+          ? product.offerType.trim()
           : undefined,
       offerLabel:
         typeof product.offerLabel === 'string'
@@ -661,6 +665,7 @@ export class FirebaseDataService {
       shortDescription: product.shortDescription,
       description: product.description,
       basePrice: product.basePrice,
+      isActive: product.isActive,
       imageUrl: product.imageUrl,
       tags: product.tags ?? [],
       isOffer: product.isOffer,
@@ -670,6 +675,10 @@ export class FirebaseDataService {
 
     if (typeof product.finalPrice === 'number') {
       payload['finalPrice'] = product.finalPrice;
+    }
+
+    if (typeof product.supplierPrice === 'number') {
+      payload['supplierPrice'] = product.supplierPrice;
     }
 
     if (typeof product.offerType === 'string') {

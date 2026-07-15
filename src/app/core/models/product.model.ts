@@ -13,11 +13,13 @@ export interface Product {
   shortDescription: string;
   description: string;
   basePrice: number;
+  supplierPrice?: number;
   finalPrice?: number;
   imageUrl: string;
   tags: string[];
+  isActive: boolean;
   isOffer: boolean;
-  offerType?: 'promo' | 'flash' | 'stagionale';
+  offerType?: string;
   offerLabel?: string;
   discountPercent?: number;
   relatedProductCodes?: string[];
