@@ -5,27 +5,29 @@
       <h2>La tua selezione</h2>
     </div>
 
-    <strong>{{ selectedProducts().length }} articoli</strong>
+    <strong>{{ selectedCount() }} articoli</strong>
   </div>
 
-  @if (selectedProducts().length > 0) {
+  @if (groupedSelectedProducts().length > 0) {
     <div class="configurator-items">
-      @for (item of selectedProducts(); track item.id) {
+      @for (item of groupedSelectedProducts(); track item.product.id) {
         <div class="configurator-item">
-          <img [src]="item.imageUrl" [alt]="item.name" />
+          <img [src]="item.product.imageUrl" [alt]="item.product.name" />
 
           <div class="configurator-item__info">
-            <strong>{{ item.name }}</strong>
-            @if (canSeeProductPrice(item)) {
+            <strong>{{ item.product.name }}</strong>
+            <small>{{ getQuantityLabel(item) }}</small>
+            @if (canSeeProductPrice(item.product)) {
               <span>
-                {{ item.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+                {{ getLineTotal(item) | currency: "EUR" : "symbol" : "1.0-0" }}
               </span>
 
-              @if (canSeeSupplierPrice(item)) {
+              @if (canSeeGroupedSupplierPrice(item)) {
                 <small>
                   Prezzo collaboratore:
                   {{
-                    item.supplierPrice | currency: "EUR" : "symbol" : "1.0-0"
+                    item.product.supplierPrice
+                      | currency: "EUR" : "symbol" : "1.0-0"
                   }}
                 </small>
               }
@@ -36,7 +38,7 @@
             type="button"
             class="remove-item"
             aria-label="Rimuovi prodotto"
-            (click)="removeProduct(item.id)"
+            (click)="removeProduct(item.product.id)"
           >
             ×
           </button>

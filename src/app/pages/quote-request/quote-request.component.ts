@@ -18,6 +18,8 @@ export class QuoteRequestComponent {
   private readonly priceVisibilityService = inject(PriceVisibilityService);
 
   readonly selectedProducts = this.quoteConfiguratorService.selectedProducts;
+  readonly groupedSelectedProducts =
+    this.quoteConfiguratorService.groupedSelectedProducts;
   readonly selectedTotal = this.quoteConfiguratorService.selectedTotal;
 
   canSeeProductPrice(product: Product): boolean {
@@ -29,8 +31,8 @@ export class QuoteRequestComponent {
   }
 
   canSeeTotal(): boolean {
-    return this.selectedProducts().every((product) =>
-      this.canSeeProductPrice(product),
+    return this.groupedSelectedProducts().every((item) =>
+      this.canSeeProductPrice(item.product),
     );
   }
 

@@ -16,9 +16,32 @@
     <div class="product-card__footer">
       @if (canSeeProductPrice()) {
         <div class="product-card__price-wrap">
-          <span class="product-card__price">
-            Da {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
-          </span>
+          @if (product.discountPercent) {
+            <div class="product-card__offer-row">
+              <span class="product-card__discount-pill">
+                -{{ product.discountPercent }}%
+              </span>
+              <span class="product-card__save-pill">
+                Risparmi
+                {{ getSavings() | currency: "EUR" : "symbol" : "1.0-0" }}
+              </span>
+            </div>
+
+            <div class="product-card__offer-price">
+              <strong>
+                {{
+                  getDiscountedPrice() | currency: "EUR" : "symbol" : "1.0-0"
+                }}
+              </strong>
+              <span>
+                {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+              </span>
+            </div>
+          } @else {
+            <span class="product-card__price">
+              Da {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+            </span>
+          }
 
           @if (canSeeSupplierPrice()) {
             <span class="product-card__supplier-price">

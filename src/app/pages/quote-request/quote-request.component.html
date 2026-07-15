@@ -7,30 +7,31 @@
     </p>
   </div>
 
-  @if (selectedProducts().length > 0) {
+  @if (groupedSelectedProducts().length > 0) {
     <div class="quote-layout">
       <div class="quote-items">
-        @for (product of selectedProducts(); track product.id) {
+        @for (item of groupedSelectedProducts(); track item.product.id) {
           <article class="quote-item">
-            <img [src]="product.imageUrl" [alt]="product.name" />
+            <img [src]="item.product.imageUrl" [alt]="item.product.name" />
 
             <div class="quote-item__content">
-              <span>{{ product.category }}</span>
-              <h3>{{ product.name }}</h3>
-              <p>{{ product.shortDescription }}</p>
+              <span>{{ item.product.category }}</span>
+              <h3>{{ item.product.name }}</h3>
+              <p>{{ item.product.shortDescription }}</p>
+              <small>Quantita: {{ item.quantity }}</small>
             </div>
 
-            @if (canSeeProductPrice(product)) {
+            @if (canSeeProductPrice(item.product)) {
               <div class="quote-item__prices">
                 <strong>
-                  {{ product.basePrice | currency: "EUR" : "symbol" : "1.0-0" }}
+                  {{ item.lineTotal | currency: "EUR" : "symbol" : "1.0-0" }}
                 </strong>
 
-                @if (canSeeSupplierPrice(product)) {
+                @if (canSeeSupplierPrice(item.product)) {
                   <small>
                     Prezzo collaboratore:
                     {{
-                      product.supplierPrice
+                      item.product.supplierPrice
                         | currency: "EUR" : "symbol" : "1.0-0"
                     }}
                   </small>
@@ -41,7 +42,7 @@
             <button
               type="button"
               class="remove-btn"
-              (click)="removeProduct(product.id)"
+              (click)="removeProduct(item.product.id)"
             >
               ×
             </button>

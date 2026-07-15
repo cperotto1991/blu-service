@@ -40,7 +40,7 @@
         (click)="toggleConfiguration(product)"
       >
         @if (isSelected(product.id)) {
-          ✓ Aggiunto alla configurazione
+          + Aggiungi un altro ({{ getSelectedQuantity(product.id) }})
         } @else {
           + Aggiungi alla configurazione
         }
@@ -106,7 +106,9 @@
                         (click)="toggleConfiguration(related)"
                       >
                         @if (isSelected(related.id)) {
-                          ✓ Aggiunto
+                          + Aggiungi un altro ({{
+                            getSelectedQuantity(related.id)
+                          }})
                         } @else {
                           + Aggiungi
                         }

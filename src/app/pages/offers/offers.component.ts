@@ -35,4 +35,22 @@ export class OffersComponent implements OnInit {
   canSeeSupplierPrice(product: Product): boolean {
     return this.priceVisibilityService.canSeeSupplierPrice(product);
   }
+
+  getDiscountedPrice(product: Product): number {
+    const discountPercent = product.discountPercent ?? 0;
+
+    if (typeof product.finalPrice === 'number' && product.finalPrice > 0) {
+      return product.finalPrice;
+    }
+
+    if (discountPercent <= 0) {
+      return product.basePrice;
+    }
+
+    return Math.round(product.basePrice * (1 - discountPercent / 100));
+  }
+
+  getSavings(product: Product): number {
+    return Math.max(0, product.basePrice - this.getDiscountedPrice(product));
+  }
 }

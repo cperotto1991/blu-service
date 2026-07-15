@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { QuoteConfiguratorService } from '../../core/services/quote-configurator.service';
+import {
+  ConfiguredProductItem,
+  QuoteConfiguratorService,
+} from '../../core/services/quote-configurator.service';
 import { inject } from '@angular/core';
 import { PriceVisibilityService } from '../../core/services/price-visibility.service';
 import { Product } from '../../core/models/product.model';
@@ -24,6 +27,14 @@ export class QuoteConfiguratorComponent {
     return this.quoteConfiguratorService.selectedProducts;
   }
 
+  get groupedSelectedProducts() {
+    return this.quoteConfiguratorService.groupedSelectedProducts;
+  }
+
+  get selectedCount() {
+    return this.quoteConfiguratorService.selectedCount;
+  }
+
   get selectedTotal() {
     return this.quoteConfiguratorService.selectedTotal;
   }
@@ -37,9 +48,21 @@ export class QuoteConfiguratorComponent {
   }
 
   canSeeTotal(): boolean {
-    return this.selectedProducts().every((product) =>
-      this.canSeeProductPrice(product),
+    return this.groupedSelectedProducts().every((item) =>
+      this.canSeeProductPrice(item.product),
     );
+  }
+
+  getLineTotal(item: ConfiguredProductItem): number {
+    return item.lineTotal;
+  }
+
+  getQuantityLabel(item: ConfiguredProductItem): string {
+    return `Quantita: ${item.quantity}`;
+  }
+
+  canSeeGroupedSupplierPrice(item: ConfiguredProductItem): boolean {
+    return this.canSeeSupplierPrice(item.product);
   }
 
   removeProduct(id: number): void {

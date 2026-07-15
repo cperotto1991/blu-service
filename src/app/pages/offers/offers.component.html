@@ -19,10 +19,12 @@
 
         @if (canSeeOfferPrice(product)) {
           <div class="price">
-            <span>Da</span>
             <strong>{{
-              product.basePrice | currency: "EUR" : "symbol" : "1.0-0"
+              getDiscountedPrice(product) | currency: "EUR" : "symbol" : "1.0-0"
             }}</strong>
+            <span>{{
+              product.basePrice | currency: "EUR" : "symbol" : "1.0-0"
+            }}</span>
             @if (product.discountPercent) {
               <em>-{{ product.discountPercent }}%</em>
             }
@@ -32,6 +34,13 @@
             <div class="supplier-price">
               Prezzo collaboratore:
               {{ product.supplierPrice | currency: "EUR" : "symbol" : "1.0-0" }}
+            </div>
+          }
+
+          @if (product.discountPercent) {
+            <div class="offer-save">
+              Risparmi
+              {{ getSavings(product) | currency: "EUR" : "symbol" : "1.0-0" }}
             </div>
           }
         }

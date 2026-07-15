@@ -77,7 +77,11 @@ export class ProductDetailComponent {
   readonly selectedTotal = this.quoteConfiguratorService.selectedTotal;
 
   isSelected(productId: number): boolean {
-    return this.selectedProducts().some((item) => item.id === productId);
+    return this.getSelectedQuantity(productId) > 0;
+  }
+
+  getSelectedQuantity(productId: number): number {
+    return this.quoteConfiguratorService.getProductQuantity(productId);
   }
 
   addToConfiguration(product: Product): void {
@@ -89,11 +93,6 @@ export class ProductDetailComponent {
   }
 
   toggleConfiguration(product: Product): void {
-    if (this.isSelected(product.id)) {
-      this.removeFromConfiguration(product.id);
-      return;
-    }
-
     this.addToConfiguration(product);
   }
 

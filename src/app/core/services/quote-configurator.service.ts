@@ -10,6 +10,12 @@ import { Product } from '../models/product.model';
 
 const STORAGE_KEY = 'blu-service-quote-products';
 
+export type ConfiguredProductItem = {
+  product: Product;
+  quantity: number;
+  lineTotal: number;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -23,6 +29,28 @@ export class QuoteConfiguratorService {
 
   readonly selectedProducts = this.selectedProductsSignal.asReadonly();
 
+  readonly groupedSelectedProducts = computed<ConfiguredProductItem[]>(() => {
+    const grouped = new Map<number, ConfiguredProductItem>();
+
+    for (const product of this.selectedProductsSignal()) {
+      const current = grouped.get(product.id);
+
+      if (current) {
+        current.quantity += 1;
+        current.lineTotal += product.basePrice;
+        continue;
+      }
+
+      grouped.set(product.id, {
+        product,
+        quantity: 1,
+        lineTotal: product.basePrice,
+      });
+    }
+
+    return Array.from(grouped.values());
+  });
+
   readonly selectedTotal = computed(() =>
     this.selectedProductsSignal().reduce(
       (total, product) => total + product.basePrice,
@@ -33,14 +61,6 @@ export class QuoteConfiguratorService {
   readonly selectedCount = computed(() => this.selectedProductsSignal().length);
 
   addProduct(product: Product): void {
-    const alreadySelected = this.selectedProductsSignal().some(
-      (item) => item.id === product.id,
-    );
-
-    if (alreadySelected) {
-      return;
-    }
-
     this.selectedProductsSignal.update((items) => {
       const updated = [...items, product];
       this.saveToStorage(updated);
@@ -50,10 +70,22 @@ export class QuoteConfiguratorService {
 
   removeProduct(productId: number): void {
     this.selectedProductsSignal.update((items) => {
-      const updated = items.filter((item) => item.id !== productId);
+      const index = items.findIndex((item) => item.id === productId);
+
+      if (index < 0) {
+        return items;
+      }
+
+      const updated = [...items];
+      updated.splice(index, 1);
       this.saveToStorage(updated);
       return updated;
     });
+  }
+
+  getProductQuantity(productId: number): number {
+    return this.selectedProductsSignal().filter((item) => item.id === productId)
+      .length;
   }
 
   clear(): void {

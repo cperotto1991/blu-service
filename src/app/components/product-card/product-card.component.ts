@@ -25,6 +25,27 @@ export class ProductCardComponent {
     return this.priceVisibilityService.canSeeSupplierPrice(this.product);
   }
 
+  getDiscountedPrice(): number {
+    const discountPercent = this.product.discountPercent ?? 0;
+
+    if (
+      typeof this.product.finalPrice === 'number' &&
+      this.product.finalPrice > 0
+    ) {
+      return this.product.finalPrice;
+    }
+
+    if (discountPercent <= 0) {
+      return this.product.basePrice;
+    }
+
+    return Math.round(this.product.basePrice * (1 - discountPercent / 100));
+  }
+
+  getSavings(): number {
+    return Math.max(0, this.product.basePrice - this.getDiscountedPrice());
+  }
+
   addToConfigurator(): void {
     this.add.emit(this.product);
   }

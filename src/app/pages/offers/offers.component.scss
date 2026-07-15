@@ -87,7 +87,16 @@
   margin-top: 22px;
 
   strong {
+    color: #18a957;
     font-size: 2rem;
+    font-weight: 950;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 1rem;
+    font-weight: 800;
+    text-decoration: line-through;
   }
 
   em {
@@ -95,6 +104,13 @@
     font-style: normal;
     font-weight: 900;
   }
+}
+
+.offer-save {
+  margin-top: 0.55rem;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 900;
 }
 
 .supplier-price {
